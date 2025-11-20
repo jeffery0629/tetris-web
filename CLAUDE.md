@@ -197,3 +197,141 @@ MAX_POWERUP_INVENTORY = 2
 - ✅ .exe runs standalone on Windows
 - ✅ No crashes during normal gameplay
 - ✅ Girlfriend enjoys playing it! 💝
+
+---
+
+## Web Version Deployment (Phase 7) - COMPLETED ✅
+
+### Deployment Platform
+- **Target**: GitHub Pages (https://jeffery0629.github.io/tetris-web)
+- **Technology**: Pygbag (Pygame → WebAssembly)
+- **Repository**: https://github.com/jeffery0629/tetris-web
+- **Auto-deploy**: GitHub Actions on push to main branch
+
+### Web Conversion Changes
+
+#### 1. Async Support
+- Converted all main game loops to async/await
+- Added `asyncio.sleep(0)` in game loop for web compatibility
+- Modified `main.py`, `game.py`, `menu.py` with `async def` and `await`
+
+#### 2. Mobile Touch Controls (`touch_controls.py`)
+- **Layout**:
+  - Left/Right screen tap zones for horizontal movement
+  - Bottom buttons: PWR (power-up), HLD (hold)
+  - Right side buttons: DROP (hard drop), ROT (rotate) stacked vertically
+  - Top-left: Pause button
+- **Touch zones expanded**: From top (0px) to bottom buttons for maximum responsiveness
+- **Priority**: Functional buttons > Movement zones > Pause button
+
+#### 3. Visual Adjustments
+- **Removed emoji/Chinese text**: Web fonts don't support, replaced with English labels
+- **Classic Tetris block style**: 3D beveled blocks with light/dark edges
+- **Cat icon**: Loaded from `images/cat.jpg` and displayed next to title
+- **POWER-UPS panel**: Compact 250×120px with horizontal layout
+
+#### 4. Game Over Screen Enhancement
+- Dark overlay (alpha 220) for prominence
+- Large modal (500×420px) with shadow
+- Red "GAME OVER" text (font_large)
+- Touch-friendly buttons: RESTART (200×70px) and MENU
+- Shows Score + Lines + High Score notification
+
+#### 5. Configuration (`pygbag.json`)
+```json
+{
+  "width": 800,
+  "height": 750,
+  "title": "Claire's Tetris 💖",
+  "orientation": "portrait",
+  "icon": "favicon.png",
+  "pygame": {
+    "no_user_action": true
+  },
+  "renderer": "canvas"
+}
+```
+
+#### 6. GitHub Actions Workflow
+```yaml
+- Clear Pygbag cache (rm -rf build/web-cache)
+- Build: pygbag --ume_block 0 --build .
+- Deploy to GitHub Pages automatically
+```
+
+### Critical Bug Fixes
+
+#### Fix 1: Ghost Mode Out of Bounds
+- **Problem**: Blocks could move outside screen boundaries
+- **Root cause**: Ghost mode bypassed ALL position checks including bounds
+- **Solution**:
+  - Added `Board.is_within_bounds()` method
+  - Ghost mode now checks boundaries, only ignores block collisions
+  - `move_block()` and `rotate_block()` now validate bounds in ghost mode
+
+#### Fix 2: Ghost Mode Can't Stop
+- **Problem**: Blocks couldn't lock down after phasing through
+- **Root cause**: `is_on_ground` forced to False during ghost mode
+- **Solution**: Check bottom boundary even in ghost mode
+  ```python
+  if ghost_mode:
+      self.is_on_ground = not self.board.is_within_bounds(test_block)
+  ```
+
+#### Fix 3: Smart Bomb Targeting
+- **Problem**: Bomb cleared bottom-center (useless when blocks stack high)
+- **User feedback**: "炸下面沒意義, 空白和方塊夾雜的部分才需要炸"
+- **Solution**:
+  - Added `Board.find_most_problematic_area()` method
+  - Algorithm: `problem_score = filled × empty` (maximizes at 50/50 mix)
+  - Targets chaotic mixed areas that create holes
+
+#### Fix 4: Crazy Mode Unlock
+- **Problem**: Hardcoded 50-line requirement in SaveManager
+- **Solution**:
+  - Changed default `unlocked_modes` to include "crazy"
+  - Modified `check_and_unlock_modes()` to read `UNLOCK_REQUIREMENTS` dynamically
+  - All modes now unlocked by default (UNLOCK_REQUIREMENTS = 0)
+
+#### Fix 5: Touch Zone Expansion
+- **User feedback**: "左右邊的觸控範圍不夠大"
+- **Changes**:
+  - Vertical: 70px → 0px (top), expanded to bottom buttons
+  - Horizontal: Removed 10px safety margin
+  - Button priority: Functional buttons > Movement zones > Pause
+
+### File Organization
+```
+/
+├── images/          # Cat icon, favicon
+├── docs/            # Documentation (HOW_TO_PLAY, product_spec, PROGRESS)
+├── src/tetris/      # Game source code
+│   ├── touch_controls.py  # Mobile touch handling
+│   └── ...
+├── pygbag.json      # Pygbag configuration
+├── favicon.png      # 64×64 PNG (converted from cat.jpg)
+└── .github/workflows/deploy-pygbag.yml
+```
+
+### Known Issues & Solutions
+- ✅ **READY TO START touch offset**: Fixed with `--ume_block 0` flag
+- ✅ **Cat icon not displaying**: Converted to proper 64×64 PNG format
+- ✅ **Emoji showing as squares**: Replaced all emoji with text labels
+- ✅ **Black screen crash**: Fixed negative button height calculation
+- ✅ **SaveManager cache**: Force rebuild with `rm -rf build/web-cache`
+
+### Deployment Status
+- **Current Version**: Live at https://jeffery0629.github.io/tetris-web
+- **Auto-deploy**: Enabled on main branch push
+- **Build time**: ~3-5 minutes via GitHub Actions
+- **Browser compatibility**: Chrome, Safari, Edge (requires iOS 15+ for Safari)
+
+### Testing Checklist
+- ✅ All 3 modes accessible (Casual, Classic, Crazy)
+- ✅ Touch controls responsive on mobile
+- ✅ Cat icon displays in title
+- ✅ Game Over screen shows with restart button
+- ✅ Bomb targets problematic mixed areas
+- ✅ Ghost mode respects boundaries
+- ✅ Left/right touch zones maximized
+- ✅ Classic block style renders correctly
