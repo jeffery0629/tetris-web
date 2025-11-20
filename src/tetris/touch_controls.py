@@ -107,7 +107,7 @@ class TouchControlManager:
             width=bottom_button_width,
             height=self.button_height,
             label="Power-up",
-            icon="PWR",
+            icon="POWER",
             action="powerup",
             color=(200, 100, 200),
             hover_color=(220, 120, 220)
@@ -120,7 +120,7 @@ class TouchControlManager:
             width=bottom_button_width,
             height=self.button_height,
             label="Hold",
-            icon="HLD",
+            icon="HOLD",
             action="hold",
             color=(200, 150, 100),
             hover_color=(220, 170, 120)
