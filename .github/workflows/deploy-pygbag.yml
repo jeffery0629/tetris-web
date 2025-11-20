@@ -40,7 +40,7 @@ jobs:
 
     - name: Build with Pygbag
       run: |
-        pygbag --build .
+        pygbag --ume_block 0 --build .
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
