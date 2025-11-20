@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Save files and backups
+tetris_save.json
+tetris_save.bak
+*.bak
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+nul
+
+# PyInstaller
+*.spec
