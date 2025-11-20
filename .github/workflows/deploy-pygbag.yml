@@ -33,6 +33,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install pygbag
 
+    - name: Clear Pygbag cache (force rebuild)
+      run: |
+        rm -rf build/web-cache
+        echo "Cache cleared, forcing full rebuild"
+
     - name: Build with Pygbag
       run: |
         pygbag --build .

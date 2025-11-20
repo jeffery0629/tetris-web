@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 from typing import Dict, Any
-from .constants import SAVE_FILE_PATH, SAVE_FILE_VERSION, GameMode
+from .constants import SAVE_FILE_PATH, SAVE_FILE_VERSION, GameMode, UNLOCK_REQUIREMENTS
 
 
 class SaveManager:
@@ -33,7 +33,7 @@ class SaveManager:
                 "classic": 0.0,
                 "crazy": 0.0,
             },
-            "unlocked_modes": ["casual", "classic"],
+            "unlocked_modes": ["casual", "classic", "crazy"],
             "settings": {
                 "volume": 0.7,
                 "show_ghost": True,
@@ -111,14 +111,16 @@ class SaveManager:
             self.save()
 
     def check_and_unlock_modes(self) -> list[str]:
-        """Check if any modes should be unlocked based on progress."""
+        """Check if any modes should be unlocked based on UNLOCK_REQUIREMENTS."""
         newly_unlocked = []
         total_lines = self.get_total_lines()
 
-        # Unlock Crazy mode after 50 lines
-        if total_lines >= 50 and not self.is_mode_unlocked("crazy"):
-            self.unlock_mode("crazy")
-            newly_unlocked.append("crazy")
+        # Check all modes against UNLOCK_REQUIREMENTS
+        for mode, required_lines in UNLOCK_REQUIREMENTS.items():
+            mode_str = mode.value  # Convert enum to string
+            if total_lines >= required_lines and not self.is_mode_unlocked(mode_str):
+                self.unlock_mode(mode_str)
+                newly_unlocked.append(mode_str)
 
         return newly_unlocked
 
