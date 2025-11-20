@@ -42,35 +42,42 @@ class Renderer:
 
     def draw_cell(self, x: int, y: int, color: Tuple[int, int, int],
                   offset_x: int = 0, offset_y: int = 0, alpha: int = 255) -> None:
-        """Draw a single cell (block) with jelly/cute style."""
-        
+        """Draw a single cell (block) with vibrant 3D style."""
+
         # Pixel coordinates
         px = offset_x + x * CELL_SIZE
         py = offset_y + y * CELL_SIZE
-        
-        # 1. Draw the main block body (Rounded)
-        rect = pygame.Rect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2) # Leave small gap
-        
+
+        # 1. Draw 3D shadow (bottom-right edge)
+        shadow_color = (max(0, color[0]-60), max(0, color[1]-60), max(0, color[2]-60))
+        shadow_rect = pygame.Rect(px + 2, py + 2, CELL_SIZE - 2, CELL_SIZE - 2)
+        pygame.draw.rect(self.screen, shadow_color, shadow_rect, border_radius=6)
+
+        # 2. Draw the main block body
+        rect = pygame.Rect(px, py, CELL_SIZE - 2, CELL_SIZE - 2)
+
         if alpha < 255:
             s = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            # Draw rounded rect on transparent surface
-            pygame.draw.rect(s, (*color, alpha), (1, 1, CELL_SIZE-2, CELL_SIZE-2), border_radius=6)
+            pygame.draw.rect(s, (*color, alpha), (0, 0, CELL_SIZE-2, CELL_SIZE-2), border_radius=6)
             self.screen.blit(s, (px, py))
         else:
             pygame.draw.rect(self.screen, color, rect, border_radius=6)
-            
-            # 2. Draw "Jelly Shine" (Highlight) - Top left corner
+
+            # 3. Draw bright highlight (top-left)
             highlight_color = (255, 255, 255)
-            highlight_rect = pygame.Rect(px + 4, py + 4, CELL_SIZE // 3, CELL_SIZE // 3)
-            
             s_highlight = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            pygame.draw.ellipse(s_highlight, (*highlight_color, 150), (4, 4, CELL_SIZE//2.5, CELL_SIZE//3.5))
+            pygame.draw.ellipse(s_highlight, (*highlight_color, 200), (3, 3, CELL_SIZE//2, CELL_SIZE//2.5))
             self.screen.blit(s_highlight, (px, py))
 
-            # 3. Draw subtle border (Darker shade of block color)
-            # Simple way to get darker color: subtract from RGB
-            darker_color = (max(0, color[0]-30), max(0, color[1]-30), max(0, color[2]-30))
-            pygame.draw.rect(self.screen, darker_color, rect, 2, border_radius=6)
+            # 4. Draw darker bottom-right gradient for depth
+            s_shadow = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+            darker = (max(0, color[0]-40), max(0, color[1]-40), max(0, color[2]-40))
+            pygame.draw.rect(s_shadow, (*darker, 120), (CELL_SIZE//2, CELL_SIZE//2, CELL_SIZE//2, CELL_SIZE//2), border_radius=3)
+            self.screen.blit(s_shadow, (px, py))
+
+            # 5. Draw bold border for definition
+            border_color = (max(0, color[0]-80), max(0, color[1]-80), max(0, color[2]-80))
+            pygame.draw.rect(self.screen, border_color, rect, 2, border_radius=6)
 
     def draw_board(self, board: Board, offset_x: int = 50, offset_y: int = 50) -> None:
         """Draw the game board grid and placed blocks."""

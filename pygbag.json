@@ -3,7 +3,7 @@
   "height": 750,
   "title": "Claire's Tetris 💖",
   "orientation": "portrait",
-  "icon": "images/favicon.png",
+  "icon": "favicon.png",
   "package": "claire",
   "version": "1.0.0",
   "splash": {

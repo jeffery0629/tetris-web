@@ -64,32 +64,32 @@ COLOR_BUTTON_NORMAL = (255, 200, 210) # Pastel Pink Button
 COLOR_BUTTON_HOVER = (255, 180, 195)
 COLOR_BUTTON_LOCKED = (230, 230, 230)
 
-# Pastel Block Colors (Classic)
-COLOR_CYAN = (150, 230, 240)        # I - Soft Cyan
-COLOR_YELLOW = (255, 245, 150)      # O - Butter Yellow
-COLOR_PURPLE = (220, 180, 240)      # T - Lavender
-COLOR_GREEN = (160, 235, 160)       # S - Mint
-COLOR_RED = (255, 160, 160)         # Z - Salmon Pink
-COLOR_BLUE = (160, 190, 255)        # J - Periwinkle
-COLOR_ORANGE = (255, 200, 150)      # L - Peach
+# Vibrant Block Colors with 3D effect (Classic)
+COLOR_CYAN = (0, 240, 255)          # I - Bright Cyan
+COLOR_YELLOW = (255, 220, 0)        # O - Golden Yellow
+COLOR_PURPLE = (180, 0, 255)        # T - Vibrant Purple
+COLOR_GREEN = (0, 255, 100)         # S - Bright Green
+COLOR_RED = (255, 50, 50)           # Z - Bright Red
+COLOR_BLUE = (0, 100, 255)          # J - Deep Blue
+COLOR_ORANGE = (255, 140, 0)        # L - Vibrant Orange
 
-# Pastel Block Colors (Simple)
-COLOR_LIGHT_BLUE = (180, 220, 255)  # I3
-COLOR_LIGHT_ORANGE = (255, 220, 180) # L3
+# Vibrant Block Colors (Simple)
+COLOR_LIGHT_BLUE = (100, 200, 255)  # I3 - Sky Blue
+COLOR_LIGHT_ORANGE = (255, 160, 80) # L3 - Tangerine
 
-# Pastel Block Colors (Crazy) - Expanded Macaron Palette
-COLOR_PINK = (255, 192, 203)
-COLOR_TEAL = (140, 210, 210)
-COLOR_LIME = (210, 255, 160)
-COLOR_MAGENTA = (240, 160, 240)
-COLOR_NAVY = (140, 140, 200)
-COLOR_OLIVE = (200, 200, 140)
-COLOR_MAROON = (200, 140, 140)
-COLOR_AQUA = (160, 240, 240)
-COLOR_FUCHSIA = (240, 140, 240)
-COLOR_SILVER = (210, 210, 220)
-COLOR_GOLD = (255, 230, 140)
-COLOR_CORAL = (255, 180, 160)
+# Vibrant Block Colors (Crazy) - Saturated Palette
+COLOR_PINK = (255, 105, 180)        # Hot Pink
+COLOR_TEAL = (0, 200, 200)          # Turquoise
+COLOR_LIME = (180, 255, 0)          # Neon Lime
+COLOR_MAGENTA = (255, 0, 255)       # Magenta
+COLOR_NAVY = (70, 70, 200)          # Navy Blue
+COLOR_OLIVE = (180, 180, 0)         # Olive
+COLOR_MAROON = (180, 0, 0)          # Maroon
+COLOR_AQUA = (0, 255, 255)          # Aqua
+COLOR_FUCHSIA = (255, 0, 200)       # Fuchsia
+COLOR_SILVER = (192, 192, 192)      # Silver
+COLOR_GOLD = (255, 215, 0)          # Gold
+COLOR_CORAL = (255, 127, 80)        # Coral
 
 # Power-up colors
 COLOR_POWERUP_GLOW = (255, 255, 200)
