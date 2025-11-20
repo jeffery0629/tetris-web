@@ -1,0 +1,16 @@
+{
+  "width": 800,
+  "height": 750,
+  "title": "Claire's Tetris 💖",
+  "orientation": "portrait",
+  "icon": "favicon.png",
+  "package": "claire",
+  "version": "1.0.0",
+  "splash": {
+    "text": "Loading Claire's Tetris...",
+    "color": "#FFF8FA"
+  },
+  "pygame": {
+    "no_user_action": true
+  }
+}
