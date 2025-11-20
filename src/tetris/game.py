@@ -408,6 +408,9 @@ class GameEnhanced:
                     self.rotate_block(clockwise=True)
                     if self.is_on_ground:
                         self.lock_timer = time.time()
+                elif action == "hard_drop":
+                    rows = self.hard_drop()
+                    self.score += rows * SCORE_HARD_DROP
                 elif action == "powerup":
                     self.use_powerup()
                 elif action == "hold":

@@ -222,46 +222,37 @@ class Renderer:
 
     def draw_powerup_inventory(self, inventory: list, active_effects: list,
                                x: int = 420, y: int = 410) -> None:
-        """Draw power-up inventory."""
-        self.draw_panel(x, y, 250, 200, "POWER-UPS")
-        
-        # Draw inventory slots
+        """Draw power-up inventory (compact version)."""
+        self.draw_panel(x, y, 250, 120, "POWER-UPS")
+
+        # Draw inventory slots (compact, side by side)
         slot_y = y + 40
         for i in range(2):
-            slot_x = x + 20
-            slot_rect = pygame.Rect(slot_x, slot_y + i * 50, 210, 40)
+            slot_x = x + 15 + i * 110
+            slot_rect = pygame.Rect(slot_x, slot_y, 100, 50)
             
             self.draw_rounded_rect(self.screen, slot_rect, (245, 245, 255), radius=10)
 
             if i < len(inventory):
                 powerup = inventory[i]
                 pygame.draw.rect(self.screen, COLOR_BUTTON_NORMAL, slot_rect, 2, border_radius=10)
-                
+
+                # Simplified text labels (no emoji for web compatibility)
                 name_map = {
-                    "bomb": "💣 BOMB",
-                    "rainbow": "🌈 RAINBOW",
-                    "time_freeze": "⏸️ FREEZE",
-                    "gravity_reverse": "🔄 REVERSE",
-                    "line_eraser": "⚡ ERASER",
-                    "ghost_mode": "👻 GHOST"
+                    "bomb": "BOMB",
+                    "rainbow": "RAIN",
+                    "time_freeze": "FRZE",
+                    "gravity_reverse": "GRAV",
+                    "line_eraser": "ERAS",
+                    "ghost_mode": "GHST"
                 }
-                name = name_map.get(powerup.type.value, powerup.type.value.upper())
-                self.draw_text(name, slot_x + 10, slot_y + i * 50 + 10,
+                name = name_map.get(powerup.type.value, powerup.type.value[:4].upper())
+                self.draw_text(name, slot_x + 25, slot_y + 15,
                              self.font_tiny, COLOR_TEXT)
             else:
                 pygame.draw.rect(self.screen, COLOR_LIGHT_GRAY, slot_rect, 1, border_radius=10)
-                self.draw_text("Empty Slot", slot_x + 60, slot_y + i * 50 + 10,
+                self.draw_text("---", slot_x + 35, slot_y + 15,
                              self.font_tiny, COLOR_LIGHT_GRAY)
-
-        # Active effects
-        if active_effects:
-            self.draw_text("ACTIVE EFFECTS:", x + 20, y + 145, self.font_tiny, COLOR_GREEN)
-            for i, effect in enumerate(active_effects):
-                # ... (simplified for brevity, logic same as before) ...
-                name = effect.type.value.upper()
-                remaining = effect.get_remaining_time()
-                text = f"{name} ({remaining:.1f}s)"
-                self.draw_text(text, x + 20, y + 170 + i * 20, self.font_tiny, COLOR_GREEN)
 
     def draw_game_over_screen(self, score: int, lines: int, high_score: int) -> None:
         """Draw cute game over overlay."""

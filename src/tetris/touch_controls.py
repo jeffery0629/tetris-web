@@ -66,13 +66,29 @@ class TouchControlManager:
             hover_color=(150, 150, 150)
         )
 
-        # Large rotate button (bottom-right corner)
-        rotate_size = 200
+        # Right-side buttons (stacked vertically in bottom-right)
+        right_button_width = 180
+        right_button_height = 95
+
+        # Hard drop button (bottom-right, upper position)
+        self.drop_button = TouchButton(
+            x=window_width - right_button_width - self.button_margin,
+            y=window_height - right_button_height * 2 - self.button_margin * 2,
+            width=right_button_width,
+            height=right_button_height,
+            label="Drop",
+            icon="DROP",
+            action="hard_drop",
+            color=(220, 100, 100),
+            hover_color=(240, 120, 120)
+        )
+
+        # Rotate button (bottom-right, lower position)
         self.rotate_button = TouchButton(
-            x=window_width - rotate_size - self.button_margin,
-            y=window_height - rotate_size - self.button_margin,
-            width=rotate_size,
-            height=rotate_size,
+            x=window_width - right_button_width - self.button_margin,
+            y=window_height - right_button_height - self.button_margin,
+            width=right_button_width,
+            height=right_button_height,
             label="Rotate",
             icon="ROT",
             action="rotate",
@@ -81,7 +97,7 @@ class TouchControlManager:
         )
 
         # Bottom buttons (PWR and HLD side by side)
-        bottom_button_width = (window_width - rotate_size - self.button_margin * 3) // 2
+        bottom_button_width = (window_width - right_button_width - self.button_margin * 3) // 2
         button_y = window_height - self.button_height - self.button_margin
 
         # Power-up button (bottom-left)
@@ -112,6 +128,7 @@ class TouchControlManager:
 
         self.buttons = [
             self.pause_button,
+            self.drop_button,
             self.rotate_button,
             self.powerup_button,
             self.hold_button
@@ -121,10 +138,10 @@ class TouchControlManager:
         self.left_pressed = False
         self.right_pressed = False
 
-        # Game area bounds (exclude UI areas and rotate button)
+        # Game area bounds (exclude UI areas and right buttons)
         self.game_area_top = 70  # Below pause button and score
-        self.game_area_bottom = window_height - rotate_size - self.button_margin - 10  # Above rotate button
-        self.game_area_right = window_width - rotate_size - self.button_margin - 10  # Left of rotate button
+        self.game_area_bottom = window_height - right_button_height * 2 - self.button_margin * 2 - 10  # Above drop button
+        self.game_area_right = window_width - right_button_width - self.button_margin - 10  # Left of right buttons
         self.game_area_center = self.game_area_right // 2
 
     def handle_touch_down(self, x: int, y: int) -> Optional[str]:
