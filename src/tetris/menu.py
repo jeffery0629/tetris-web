@@ -16,7 +16,7 @@ class ModeButton:
     """Clickable mode button."""
 
     def __init__(self, mode: GameMode, display_name: str, description: str,
-                 x: int, y: int, width: int, height: int, unlocked: bool = True):
+                 x: int, y: int, width: int, height: int, unlocked: bool = True, icon: pygame.Surface = None):
         """Initialize button."""
         self.mode = mode
         self.display_name = display_name
@@ -24,6 +24,7 @@ class ModeButton:
         self.rect = pygame.Rect(x, y, width, height)
         self.unlocked = unlocked
         self.hovered = False
+        self.icon = icon
 
     def update(self, mouse_pos: tuple) -> None:
         """Update button state."""
@@ -56,6 +57,12 @@ class ModeButton:
         desc = font_small.render(self.description, True, text_color)
         desc_rect = desc.get_rect(center=(self.rect.centerx, self.rect.centery + 20))
         screen.blit(desc, desc_rect)
+
+        # Cat icon on the right side
+        if self.icon:
+            icon_x = self.rect.right - 70
+            icon_y = self.rect.centery - 30
+            screen.blit(self.icon, (icon_x, icon_y))
 
         # Lock icon
         if not self.unlocked:
@@ -93,6 +100,27 @@ class ModeSelectionMenu:
         except (pygame.error, FileNotFoundError):
             self.cat_icon = None
 
+        # Load mode icons (cat1, cat2, cat3)
+        self.mode_icons = {}
+        icon_size = (60, 60)
+        try:
+            cat1_img = pygame.image.load("images/cat1.jpg")
+            self.mode_icons['casual'] = pygame.transform.smoothscale(cat1_img, icon_size)
+        except (pygame.error, FileNotFoundError):
+            self.mode_icons['casual'] = None
+
+        try:
+            cat2_img = pygame.image.load("images/cat2.jpg")
+            self.mode_icons['classic'] = pygame.transform.smoothscale(cat2_img, icon_size)
+        except (pygame.error, FileNotFoundError):
+            self.mode_icons['classic'] = None
+
+        try:
+            cat3_img = pygame.image.load("images/cat3.jpg")
+            self.mode_icons['crazy'] = pygame.transform.smoothscale(cat3_img, icon_size)
+        except (pygame.error, FileNotFoundError):
+            self.mode_icons['crazy'] = None
+
         # Create buttons - 3 modes (larger for better mobile touch)
         button_width = 420
         button_height = 140
@@ -108,7 +136,8 @@ class ModeSelectionMenu:
                 y=start_y,
                 width=button_width,
                 height=button_height,
-                unlocked=True
+                unlocked=True,
+                icon=self.mode_icons.get('casual')
             ),
             ModeButton(
                 mode=GameMode.CLASSIC,
@@ -118,7 +147,8 @@ class ModeSelectionMenu:
                 y=start_y + button_height + button_spacing,
                 width=button_width,
                 height=button_height,
-                unlocked=True
+                unlocked=True,
+                icon=self.mode_icons.get('classic')
             ),
             ModeButton(
                 mode=GameMode.CRAZY,
@@ -128,7 +158,8 @@ class ModeSelectionMenu:
                 y=start_y + (button_height + button_spacing) * 2,
                 width=button_width,
                 height=button_height,
-                unlocked=save_manager.is_mode_unlocked("crazy")
+                unlocked=save_manager.is_mode_unlocked("crazy"),
+                icon=self.mode_icons.get('crazy')
             ),
         ]
 
