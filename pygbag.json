@@ -12,5 +12,7 @@
   },
   "pygame": {
     "no_user_action": true
-  }
+  },
+  "can_close": false,
+  "renderer": "canvas"
 }

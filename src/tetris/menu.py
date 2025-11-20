@@ -78,17 +78,18 @@ class ModeSelectionMenu:
         self.clock = pygame.time.Clock()
         self.save_manager = save_manager
 
-        # Fonts
+        # Fonts - use English only for web compatibility
+        # Chinese characters don't render well in Pygbag web environment
         self.font_title = pygame.font.Font(None, 72)
         self.font_large = pygame.font.Font(None, 42)
         self.font_medium = pygame.font.Font(None, 36)
         self.font_small = pygame.font.Font(None, 24)
 
-        # Create buttons - 3 modes
-        button_width = 320
-        button_height = 120
-        button_spacing = 30
-        start_y = 180
+        # Create buttons - 3 modes (larger for better mobile touch)
+        button_width = 420
+        button_height = 140
+        button_spacing = 25
+        start_y = 200
 
         self.buttons = [
             ModeButton(
