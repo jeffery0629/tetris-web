@@ -66,38 +66,14 @@ class TouchControlManager:
             hover_color=(150, 150, 150)
         )
 
-        # Right-side buttons (stacked vertically in bottom-right)
-        right_button_width = 180
-        right_button_height = 95
+        # Layout redesign:
+        # - Bottom row: PWR, HLD, DROP (3 buttons side by side)
+        # - Right side: ROT (large button, entire right side)
 
-        # Rotate button (bottom-right, upper position)
-        self.rotate_button = TouchButton(
-            x=window_width - right_button_width - self.button_margin,
-            y=window_height - right_button_height * 2 - self.button_margin * 2,
-            width=right_button_width,
-            height=right_button_height,
-            label="Rotate",
-            icon="ROT",
-            action="rotate",
-            color=(100, 150, 200),
-            hover_color=(120, 170, 220)
-        )
-
-        # Hard drop button (bottom-right, lower position)
-        self.drop_button = TouchButton(
-            x=window_width - right_button_width - self.button_margin,
-            y=window_height - right_button_height - self.button_margin,
-            width=right_button_width,
-            height=right_button_height,
-            label="Drop",
-            icon="DROP",
-            action="hard_drop",
-            color=(220, 100, 100),
-            hover_color=(240, 120, 120)
-        )
-
-        # Bottom buttons (PWR and HLD side by side)
-        bottom_button_width = (window_width - right_button_width - self.button_margin * 3) // 2
+        # Calculate bottom button widths (3 buttons in a row)
+        bottom_button_count = 3
+        total_bottom_width = window_width - self.button_margin * (bottom_button_count + 1)
+        bottom_button_width = total_bottom_width // bottom_button_count
         button_y = window_height - self.button_height - self.button_margin
 
         # Power-up button (bottom-left)
@@ -124,6 +100,34 @@ class TouchControlManager:
             action="hold",
             color=(200, 150, 100),
             hover_color=(220, 170, 120)
+        )
+
+        # Drop button (bottom-right)
+        self.drop_button = TouchButton(
+            x=self.button_margin * 3 + bottom_button_width * 2,
+            y=button_y,
+            width=bottom_button_width,
+            height=self.button_height,
+            label="Drop",
+            icon="DROP",
+            action="hard_drop",
+            color=(220, 100, 100),
+            hover_color=(240, 120, 120)
+        )
+
+        # Large rotate button (entire right side, above bottom buttons)
+        rot_button_width = 200
+        rot_button_height = window_height - button_y - self.button_height - self.button_margin * 3
+        self.rotate_button = TouchButton(
+            x=window_width - rot_button_width - self.button_margin,
+            y=self.button_margin + 60,  # Below pause button
+            width=rot_button_width,
+            height=rot_button_height,
+            label="Rotate",
+            icon="ROT",
+            action="rotate",
+            color=(100, 150, 200),
+            hover_color=(120, 170, 220)
         )
 
         self.buttons = [

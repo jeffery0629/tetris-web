@@ -270,33 +270,43 @@ class Renderer:
                              self.font_tiny, COLOR_LIGHT_GRAY)
 
     def draw_game_over_screen(self, score: int, lines: int, high_score: int) -> None:
-        """Draw cute game over overlay."""
+        """Draw game over overlay with prominent popup."""
+        # Dark overlay (more opaque)
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
-        overlay.set_alpha(180)
-        overlay.fill(COLOR_BACKGROUND) # Soft overlay
+        overlay.set_alpha(220)
+        overlay.fill((0, 0, 0))  # Dark background
         self.screen.blit(overlay, (0, 0))
 
-        # Modal Box
-        box_width, box_height = 450, 380
+        # Modal Box (larger and more prominent)
+        box_width, box_height = 500, 420
         box_x = (WINDOW_WIDTH - box_width) // 2
         box_y = (WINDOW_HEIGHT - box_height) // 2
 
+        # Shadow for depth
+        shadow_rect = pygame.Rect(box_x + 6, box_y + 6, box_width, box_height)
+        self.draw_rounded_rect(self.screen, shadow_rect, (0, 0, 0), radius=20)
+
+        # Main panel
         self.draw_panel(box_x, box_y, box_width, box_height)
 
-        self.draw_text("GAME OVER", WINDOW_WIDTH // 2, box_y + 40,
-                      self.font_medium, COLOR_TEXT, center=True, shadow=True)
+        # Large "GAME OVER" text
+        self.draw_text("GAME OVER", WINDOW_WIDTH // 2, box_y + 50,
+                      self.font_large, (255, 50, 50), center=True, shadow=True)
 
         self.draw_text(f"Score: {score}", WINDOW_WIDTH // 2, box_y + 100,
                       self.font_small, COLOR_TEXT, center=True)
 
-        if score >= high_score and score > 0:
-            self.draw_text("NEW HIGH SCORE!", WINDOW_WIDTH // 2, box_y + 140,
-                          self.font_small, COLOR_ORANGE, center=True)
+        self.draw_text(f"Lines: {lines}", WINDOW_WIDTH // 2, box_y + 150,
+                      self.font_small, COLOR_TEXT, center=True)
 
-        # Touch-friendly buttons
-        button_width = 180
-        button_height = 60
-        button_y = box_y + 220
+        if score >= high_score and score > 0:
+            self.draw_text("NEW HIGH SCORE!", WINDOW_WIDTH // 2, box_y + 200,
+                          self.font_small, (255, 150, 0), center=True)
+
+        # Touch-friendly buttons (larger)
+        button_width = 200
+        button_height = 70
+        button_y = box_y + 280
 
         # Restart button
         restart_rect = pygame.Rect(
@@ -324,13 +334,13 @@ class Renderer:
 
     def get_game_over_button_clicked(self, mouse_pos: tuple) -> Optional[str]:
         """Check if game over buttons were clicked. Returns 'restart' or 'quit'."""
-        box_width, box_height = 450, 380
+        box_width, box_height = 500, 420
         box_x = (WINDOW_WIDTH - box_width) // 2
         box_y = (WINDOW_HEIGHT - box_height) // 2
 
-        button_width = 180
-        button_height = 60
-        button_y = box_y + 220
+        button_width = 200
+        button_height = 70
+        button_y = box_y + 280
 
         # Restart button
         restart_rect = pygame.Rect(
