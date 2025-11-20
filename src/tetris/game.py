@@ -504,7 +504,7 @@ class GameEnhanced:
 
         # Draw touch controls
         if self.enable_touch_controls:
-            self.touch_controls.draw(self.renderer.screen, self.renderer.font)
+            self.touch_controls.draw(self.renderer.screen, self.renderer.font_small)
 
         # Draw overlays
         if self.state == GameState.PAUSED:
