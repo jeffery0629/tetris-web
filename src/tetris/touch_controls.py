@@ -58,10 +58,10 @@ class TouchControlManager:
         self.pause_button = TouchButton(
             x=10,
             y=10,
-            width=50,
+            width=60,
             height=50,
             label="Pause",
-            icon="⏸",
+            icon="||",
             action="pause",
             color=(100, 100, 100),
             hover_color=(150, 150, 150)
@@ -77,7 +77,7 @@ class TouchControlManager:
             width=self.button_width,
             height=self.button_height,
             label="Rotate",
-            icon="🔄",
+            icon="ROT",
             action="rotate",
             color=(100, 150, 200),
             hover_color=(120, 170, 220)
@@ -90,7 +90,7 @@ class TouchControlManager:
             width=self.button_width,
             height=self.button_height,
             label="Power-up",
-            icon="💎",
+            icon="PWR",
             action="powerup",
             color=(200, 100, 200),
             hover_color=(220, 120, 220)
@@ -103,7 +103,7 @@ class TouchControlManager:
             width=self.button_width,
             height=self.button_height,
             label="Hold",
-            icon="📦",
+            icon="HLD",
             action="hold",
             color=(200, 150, 100),
             hover_color=(220, 170, 120)
