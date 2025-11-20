@@ -117,10 +117,11 @@ class TouchControlManager:
 
         # Large rotate button (entire right side, above bottom buttons)
         rot_button_width = 200
-        rot_button_height = window_height - button_y - self.button_height - self.button_margin * 3
+        rot_start_y = self.button_margin + 60  # Below pause button
+        rot_button_height = button_y - rot_start_y - self.button_margin
         self.rotate_button = TouchButton(
             x=window_width - rot_button_width - self.button_margin,
-            y=self.button_margin + 60,  # Below pause button
+            y=rot_start_y,
             width=rot_button_width,
             height=rot_button_height,
             label="Rotate",
