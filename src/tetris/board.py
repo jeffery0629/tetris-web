@@ -22,6 +22,22 @@ class Board:
             [None for _ in range(width)] for _ in range(height)
         ]
 
+    def is_within_bounds(self, block: Block) -> bool:
+        """Check if block is within board boundaries (ignoring collisions).
+
+        Args:
+            block: Block to check
+
+        Returns:
+            True if within bounds, False otherwise
+        """
+        cells = block.get_cells()
+        for x, y in cells:
+            # Check boundaries (allow y < 0 for spawn area)
+            if x < 0 or x >= self.width or y >= self.height:
+                return False
+        return True
+
     def is_valid_position(self, block: Block) -> bool:
         """Check if block position is valid (no collision).
 

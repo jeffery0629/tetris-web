@@ -150,9 +150,14 @@ class GameEnhanced:
 
         self.current_block.move(dx, dy)
 
-        # Ghost mode allows moving through blocks
+        # Ghost mode allows moving through blocks but NOT out of bounds
         if self.powerup_manager.is_effect_active(PowerUpType.GHOST_MODE):
-            return True
+            if self.board.is_within_bounds(self.current_block):
+                return True
+            else:
+                # Still out of bounds, revert
+                self.current_block.move(-dx, -dy)
+                return False
 
         if self.board.is_valid_position(self.current_block):
             return True
@@ -173,9 +178,11 @@ class GameEnhanced:
         else:
             self.current_block.rotate_ccw()
 
-        # Ghost mode ignores collisions
+        # Ghost mode ignores collisions but checks bounds
         if self.powerup_manager.is_effect_active(PowerUpType.GHOST_MODE):
-            return True
+            if self.board.is_within_bounds(self.current_block):
+                return True
+            # Out of bounds, try wall kicks
 
         if self.board.is_valid_position(self.current_block):
             return True
@@ -333,9 +340,10 @@ class GameEnhanced:
         test_block = self.current_block.copy()
         test_block.y += 1
 
-        # Ghost mode allows floating
+        # Ghost mode: check if at bottom boundary (can stop there)
         if self.powerup_manager.is_effect_active(PowerUpType.GHOST_MODE):
-            self.is_on_ground = False
+            # Can phase through blocks, but stops at bottom or if can't move down
+            self.is_on_ground = not self.board.is_within_bounds(test_block)
         else:
             self.is_on_ground = not self.board.is_valid_position(test_block)
 
