@@ -125,7 +125,7 @@ class PowerUpType(Enum):
 UNLOCK_REQUIREMENTS = {
     GameMode.CASUAL: 0,      # Always unlocked
     GameMode.CLASSIC: 0,     # Always unlocked
-    GameMode.CRAZY: 50,      # Unlock after 50 lines cleared in any mode
+    GameMode.CRAZY: 0,       # Always unlocked (was 50 lines)
 }
 
 # Save file

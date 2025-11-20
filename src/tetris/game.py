@@ -282,13 +282,12 @@ class GameEnhanced:
 
         # Apply instant effects
         if powerup.type == PowerUpType.BOMB:
-            if self.current_block:
-                # Get block center position
-                cells = self.current_block.get_cells()
-                if cells:
-                    center_x = sum(x for x, y in cells) // len(cells)
-                    center_y = sum(y for x, y in cells) // len(cells)
-                    self.board.clear_area(center_x, center_y, radius=1)
+            # Clear 3x3 area at bottom-center of board (most useful)
+            center_x = self.board.width // 2
+            center_y = self.board.height - 3  # Near bottom
+            cleared = self.board.clear_area(center_x, center_y, radius=1)
+            if cleared > 0:
+                self.show_notification(f"BOOM! Cleared {cleared} blocks!")
 
         elif powerup.type == PowerUpType.LINE_ERASER:
             self.board.clear_bottom_rows(2)

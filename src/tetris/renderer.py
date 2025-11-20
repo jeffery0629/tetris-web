@@ -42,42 +42,48 @@ class Renderer:
 
     def draw_cell(self, x: int, y: int, color: Tuple[int, int, int],
                   offset_x: int = 0, offset_y: int = 0, alpha: int = 255) -> None:
-        """Draw a single cell (block) with vibrant 3D style."""
+        """Draw a single cell (block) with gradient glass style."""
 
         # Pixel coordinates
         px = offset_x + x * CELL_SIZE
         py = offset_y + y * CELL_SIZE
 
-        # 1. Draw 3D shadow (bottom-right edge)
-        shadow_color = (max(0, color[0]-60), max(0, color[1]-60), max(0, color[2]-60))
-        shadow_rect = pygame.Rect(px + 2, py + 2, CELL_SIZE - 2, CELL_SIZE - 2)
-        pygame.draw.rect(self.screen, shadow_color, shadow_rect, border_radius=6)
+        # Create surface for layered effects
+        s = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
 
-        # 2. Draw the main block body
-        rect = pygame.Rect(px, py, CELL_SIZE - 2, CELL_SIZE - 2)
+        # 1. Draw soft shadow (bottom-right)
+        shadow_rect = pygame.Rect(2, 2, CELL_SIZE - 2, CELL_SIZE - 2)
+        pygame.draw.rect(s, (0, 0, 0, 60), shadow_rect, border_radius=8)
 
-        if alpha < 255:
-            s = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            pygame.draw.rect(s, (*color, alpha), (0, 0, CELL_SIZE-2, CELL_SIZE-2), border_radius=6)
-            self.screen.blit(s, (px, py))
-        else:
-            pygame.draw.rect(self.screen, color, rect, border_radius=6)
+        # 2. Draw main glass body with gradient effect
+        rect = pygame.Rect(0, 0, CELL_SIZE - 2, CELL_SIZE - 2)
 
-            # 3. Draw bright highlight (top-left)
-            highlight_color = (255, 255, 255)
-            s_highlight = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            pygame.draw.ellipse(s_highlight, (*highlight_color, 200), (3, 3, CELL_SIZE//2, CELL_SIZE//2.5))
-            self.screen.blit(s_highlight, (px, py))
+        # Base color with transparency for glass effect
+        base_alpha = min(alpha, 220)
+        pygame.draw.rect(s, (*color, base_alpha), rect, border_radius=8)
 
-            # 4. Draw darker bottom-right gradient for depth
-            s_shadow = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            darker = (max(0, color[0]-40), max(0, color[1]-40), max(0, color[2]-40))
-            pygame.draw.rect(s_shadow, (*darker, 120), (CELL_SIZE//2, CELL_SIZE//2, CELL_SIZE//2, CELL_SIZE//2), border_radius=3)
-            self.screen.blit(s_shadow, (px, py))
+        # 3. Top gradient overlay (lighter)
+        gradient_top = pygame.Surface((CELL_SIZE, CELL_SIZE // 2), pygame.SRCALPHA)
+        lighter = (min(255, color[0] + 60), min(255, color[1] + 60), min(255, color[2] + 60))
+        pygame.draw.rect(gradient_top, (*lighter, 100), (0, 0, CELL_SIZE - 2, CELL_SIZE // 2), border_radius=8)
+        s.blit(gradient_top, (0, 0))
 
-            # 5. Draw bold border for definition
-            border_color = (max(0, color[0]-80), max(0, color[1]-80), max(0, color[2]-80))
-            pygame.draw.rect(self.screen, border_color, rect, 2, border_radius=6)
+        # 4. Bottom gradient overlay (darker)
+        gradient_bottom = pygame.Surface((CELL_SIZE, CELL_SIZE // 2), pygame.SRCALPHA)
+        darker = (max(0, color[0] - 40), max(0, color[1] - 40), max(0, color[2] - 40))
+        pygame.draw.rect(gradient_bottom, (*darker, 80), (0, 0, CELL_SIZE - 2, CELL_SIZE // 2), border_radius=8)
+        s.blit(gradient_bottom, (0, CELL_SIZE // 2))
+
+        # 5. Glass shine (top-left bright highlight)
+        shine = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+        pygame.draw.ellipse(shine, (255, 255, 255, 180), (2, 2, CELL_SIZE // 2.2, CELL_SIZE // 2.5))
+        s.blit(shine, (0, 0))
+
+        # 6. White border for glass edge effect
+        pygame.draw.rect(s, (255, 255, 255, 150), rect, 2, border_radius=8)
+
+        # Blit final cell to screen
+        self.screen.blit(s, (px, py))
 
     def draw_board(self, board: Board, offset_x: int = 50, offset_y: int = 50) -> None:
         """Draw the game board grid and placed blocks."""
