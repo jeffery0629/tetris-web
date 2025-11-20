@@ -388,7 +388,7 @@ class Renderer:
         overlay.fill(COLOR_BACKGROUND)
         self.screen.blit(overlay, (0, 0))
 
-        self.draw_text("PAUSED ⏸️", WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2,
+        self.draw_text("PAUSED", WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2,
                       self.font_medium, COLOR_TEXT, center=True, shadow=True)
 
     def clear_screen(self) -> None:
