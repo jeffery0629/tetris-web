@@ -143,8 +143,8 @@ class TouchControlManager:
         pause_bottom = self.pause_button.y + self.pause_button.height
         self.game_area_top = pause_bottom + 10  # 10px gap below pause button
         self.game_area_bottom = window_height - self.button_height - self.button_margin  # Just above bottom buttons (expanded)
-        # Allow touch in entire screen width (except right buttons), including Next/Hold panels
-        self.game_area_right = window_width - right_button_width - self.button_margin  # Left of right buttons
+        # Allow touch in entire screen width; buttons already capture presses with higher priority
+        self.game_area_right = window_width  # Include Next/Hold panels fully
         # Center line is at half of total window width (not game_area_right)
         self.game_area_center = window_width // 2
 
@@ -167,13 +167,13 @@ class TouchControlManager:
 
         # Expanded left/right touch zones (entire left and right areas)
         # Left zone: from left edge to center
-        # Right zone: from center to right buttons (includes Next/Hold panels)
+        # Right zone: from center to screen edge (buttons already handled first)
         if y >= self.game_area_top and y <= self.game_area_bottom:
             # Left zone: entire left half of screen
             if x < self.game_area_center:
                 self.left_pressed = True
                 return "move_left"
-            # Right zone: center to right buttons (excluding right buttons themselves)
+            # Right zone: center to right edge (buttons handled before movement)
             elif x >= self.game_area_center and x <= self.game_area_right:
                 self.right_pressed = True
                 return "move_right"
@@ -204,14 +204,14 @@ class TouchControlManager:
         Returns:
             Action string if in movement area
         """
-        # Only handle motion in game area (avoid right buttons)
+        # Only handle motion in game area (buttons were already processed on down)
         if self.game_area_top <= y <= self.game_area_bottom:
             # Left zone
             if x < self.game_area_center and not self.left_pressed:
                 self.left_pressed = True
                 self.right_pressed = False
                 return "move_left"
-            # Right zone (up to right buttons)
+            # Right zone (center to right edge)
             elif self.game_area_center <= x <= self.game_area_right and not self.right_pressed:
                 self.right_pressed = True
                 self.left_pressed = False
