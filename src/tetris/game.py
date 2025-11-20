@@ -88,6 +88,9 @@ class GameEnhanced:
         self.notification_time = 0
         self.notification_duration = 2.0  # seconds
 
+        # Exit flag for returning to menu
+        self.should_exit_to_menu = False
+
         # Spawn first blocks
         self.spawn_new_block()
         self.next_block = self.generate_block()
@@ -418,10 +421,25 @@ class GameEnhanced:
                         self.restart()
                         return
                     elif button_action == "quit":
-                        return  # Will exit game loop
+                        # Set a flag to exit to menu
+                        self.should_exit_to_menu = True
+                        return
 
-                # Playing state touch controls
+                # Touch controls
                 action = self.touch_controls.handle_touch_down(event.pos[0], event.pos[1])
+
+                # Pause/unpause is always allowed
+                if action == "pause":
+                    if self.state == GameState.PLAYING:
+                        self.state = GameState.PAUSED
+                    elif self.state == GameState.PAUSED:
+                        self.state = GameState.PLAYING
+                    return
+
+                # All other actions require PLAYING state
+                if self.state != GameState.PLAYING:
+                    return
+
                 if action == "rotate":
                     self.rotate_block(clockwise=True)
                     if self.is_on_ground:
@@ -433,11 +451,6 @@ class GameEnhanced:
                     self.use_powerup()
                 elif action == "hold":
                     self.hold_current_block()
-                elif action == "pause":
-                    if self.state == GameState.PLAYING:
-                        self.state = GameState.PAUSED
-                    elif self.state == GameState.PAUSED:
-                        self.state = GameState.PLAYING
                 elif action == "move_left":
                     self.move_block(-1, 0)
                 elif action == "move_right":
@@ -447,7 +460,7 @@ class GameEnhanced:
                 self.touch_controls.handle_touch_up(event.pos[0], event.pos[1])
 
             elif event.type == pygame.MOUSEMOTION:
-                if event.buttons[0]:  # Left mouse button held
+                if self.state == GameState.PLAYING and event.buttons[0]:  # Left mouse button held
                     action = self.touch_controls.handle_touch_motion(event.pos[0], event.pos[1])
                     if action == "move_left":
                         self.move_block(-1, 0)
@@ -560,6 +573,11 @@ class GameEnhanced:
         while running:
             dt = self.clock.tick(FPS) / 1000.0
 
+            # Check if should exit to menu
+            if self.should_exit_to_menu:
+                running = False
+                break
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -582,6 +600,11 @@ class GameEnhanced:
         running = True
         while running:
             dt = self.clock.tick(FPS) / 1000.0
+
+            # Check if should exit to menu
+            if self.should_exit_to_menu:
+                running = False
+                break
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

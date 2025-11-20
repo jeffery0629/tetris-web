@@ -139,8 +139,9 @@ class TouchControlManager:
         self.right_pressed = False
 
         # Expanded game area bounds for easier touch control
-        # Make left/right touch area as large as possible
-        self.game_area_top = 0  # From top of screen (expanded)
+        # Leave space below pause button (pause button: y=10, height=50, so bottom is at 60)
+        pause_bottom = self.pause_button.y + self.pause_button.height
+        self.game_area_top = pause_bottom + 10  # 10px gap below pause button
         self.game_area_bottom = window_height - self.button_height - self.button_margin  # Just above bottom buttons (expanded)
         self.game_area_right = window_width - right_button_width - self.button_margin  # Left of right buttons (no extra margin)
         self.game_area_center = self.game_area_right // 2
