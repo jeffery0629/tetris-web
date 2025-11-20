@@ -143,8 +143,10 @@ class TouchControlManager:
         pause_bottom = self.pause_button.y + self.pause_button.height
         self.game_area_top = pause_bottom + 10  # 10px gap below pause button
         self.game_area_bottom = window_height - self.button_height - self.button_margin  # Just above bottom buttons (expanded)
-        self.game_area_right = window_width - right_button_width - self.button_margin  # Left of right buttons (no extra margin)
-        self.game_area_center = self.game_area_right // 2
+        # Allow touch in entire screen width (except right buttons), including Next/Hold panels
+        self.game_area_right = window_width - right_button_width - self.button_margin  # Left of right buttons
+        # Center line is at half of total window width (not game_area_right)
+        self.game_area_center = window_width // 2
 
     def handle_touch_down(self, x: int, y: int) -> Optional[str]:
         """Handle touch/mouse down event.
@@ -164,16 +166,17 @@ class TouchControlManager:
                 return button.action
 
         # Expanded left/right touch zones (entire left and right areas)
-        # Left zone: from left edge to center (except right buttons)
-        # Right zone: from center to right buttons
+        # Left zone: from left edge to center
+        # Right zone: from center to right buttons (includes Next/Hold panels)
         if y >= self.game_area_top and y <= self.game_area_bottom:
-            if x <= self.game_area_right:
-                if x < self.game_area_center:
-                    self.left_pressed = True
-                    return "move_left"
-                else:
-                    self.right_pressed = True
-                    return "move_right"
+            # Left zone: entire left half of screen
+            if x < self.game_area_center:
+                self.left_pressed = True
+                return "move_left"
+            # Right zone: center to right buttons (excluding right buttons themselves)
+            elif x >= self.game_area_center and x <= self.game_area_right:
+                self.right_pressed = True
+                return "move_right"
 
         # Finally check pause button (lowest priority)
         if self.pause_button.contains_point(x, y):
@@ -201,14 +204,15 @@ class TouchControlManager:
         Returns:
             Action string if in movement area
         """
-        # Only handle motion in game area (avoid rotate button)
-        if (self.game_area_top <= y <= self.game_area_bottom and
-            x <= self.game_area_right):
+        # Only handle motion in game area (avoid right buttons)
+        if self.game_area_top <= y <= self.game_area_bottom:
+            # Left zone
             if x < self.game_area_center and not self.left_pressed:
                 self.left_pressed = True
                 self.right_pressed = False
                 return "move_left"
-            elif x >= self.game_area_center and not self.right_pressed:
+            # Right zone (up to right buttons)
+            elif self.game_area_center <= x <= self.game_area_right and not self.right_pressed:
                 self.right_pressed = True
                 self.left_pressed = False
                 return "move_right"
