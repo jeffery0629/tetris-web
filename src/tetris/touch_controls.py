@@ -49,10 +49,9 @@ class TouchControlManager:
         self.window_width = window_width
         self.window_height = window_height
 
-        # Button dimensions
+        # Button dimensions - redesigned layout
         self.button_height = 70
         self.button_margin = 10
-        self.button_width = (window_width - 4 * self.button_margin) // 3
 
         # Pause button (top-left corner)
         self.pause_button = TouchButton(
@@ -67,15 +66,13 @@ class TouchControlManager:
             hover_color=(150, 150, 150)
         )
 
-        # Bottom buttons
-        button_y = window_height - self.button_height - self.button_margin
-
-        # Rotate button
+        # Large rotate button (bottom-right corner)
+        rotate_size = 200
         self.rotate_button = TouchButton(
-            x=self.button_margin,
-            y=button_y,
-            width=self.button_width,
-            height=self.button_height,
+            x=window_width - rotate_size - self.button_margin,
+            y=window_height - rotate_size - self.button_margin,
+            width=rotate_size,
+            height=rotate_size,
             label="Rotate",
             icon="ROT",
             action="rotate",
@@ -83,11 +80,15 @@ class TouchControlManager:
             hover_color=(120, 170, 220)
         )
 
-        # Power-up button
+        # Bottom buttons (PWR and HLD side by side)
+        bottom_button_width = (window_width - rotate_size - self.button_margin * 3) // 2
+        button_y = window_height - self.button_height - self.button_margin
+
+        # Power-up button (bottom-left)
         self.powerup_button = TouchButton(
-            x=self.button_margin * 2 + self.button_width,
+            x=self.button_margin,
             y=button_y,
-            width=self.button_width,
+            width=bottom_button_width,
             height=self.button_height,
             label="Power-up",
             icon="PWR",
@@ -96,11 +97,11 @@ class TouchControlManager:
             hover_color=(220, 120, 220)
         )
 
-        # Hold button
+        # Hold button (bottom-center)
         self.hold_button = TouchButton(
-            x=self.button_margin * 3 + self.button_width * 2,
+            x=self.button_margin * 2 + bottom_button_width,
             y=button_y,
-            width=self.button_width,
+            width=bottom_button_width,
             height=self.button_height,
             label="Hold",
             icon="HLD",
@@ -120,10 +121,11 @@ class TouchControlManager:
         self.left_pressed = False
         self.right_pressed = False
 
-        # Game area bounds (exclude UI areas)
+        # Game area bounds (exclude UI areas and rotate button)
         self.game_area_top = 70  # Below pause button and score
-        self.game_area_bottom = button_y - 10  # Above bottom buttons
-        self.game_area_center = window_width // 2
+        self.game_area_bottom = window_height - rotate_size - self.button_margin - 10  # Above rotate button
+        self.game_area_right = window_width - rotate_size - self.button_margin - 10  # Left of rotate button
+        self.game_area_center = self.game_area_right // 2
 
     def handle_touch_down(self, x: int, y: int) -> Optional[str]:
         """Handle touch/mouse down event.
@@ -140,8 +142,9 @@ class TouchControlManager:
                 button.is_pressed = True
                 return button.action
 
-        # Check game area for left/right movement
-        if self.game_area_top <= y <= self.game_area_bottom:
+        # Check game area for left/right movement (avoid rotate button area)
+        if (self.game_area_top <= y <= self.game_area_bottom and
+            x <= self.game_area_right):
             if x < self.game_area_center:
                 self.left_pressed = True
                 return "move_left"
@@ -170,8 +173,9 @@ class TouchControlManager:
         Returns:
             Action string if in movement area
         """
-        # Only handle motion in game area
-        if self.game_area_top <= y <= self.game_area_bottom:
+        # Only handle motion in game area (avoid rotate button)
+        if (self.game_area_top <= y <= self.game_area_bottom and
+            x <= self.game_area_right):
             if x < self.game_area_center and not self.left_pressed:
                 self.left_pressed = True
                 self.right_pressed = False
