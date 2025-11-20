@@ -36,54 +36,51 @@ class Renderer:
         self.font_small = pygame.font.Font(self.font_name, 28)  # Slightly larger for readability
         self.font_tiny = pygame.font.Font(self.font_name, 20)
 
+        # Load cat icon for title display
+        try:
+            cat_img = pygame.image.load("images/cat.jpg")
+            self.cat_icon = pygame.transform.scale(cat_img, (40, 40))
+        except (pygame.error, FileNotFoundError):
+            self.cat_icon = None
+
     def draw_rounded_rect(self, surface: pygame.Surface, rect: pygame.Rect, color: Tuple[int, int, int], radius: int = 10, width: int = 0) -> None:
         """Helper to draw rounded rectangles."""
         pygame.draw.rect(surface, color, rect, width, border_radius=radius)
 
     def draw_cell(self, x: int, y: int, color: Tuple[int, int, int],
                   offset_x: int = 0, offset_y: int = 0, alpha: int = 255) -> None:
-        """Draw a single cell (block) with gradient glass style."""
+        """Draw a single cell (block) with classic Tetris style."""
 
         # Pixel coordinates
         px = offset_x + x * CELL_SIZE
         py = offset_y + y * CELL_SIZE
 
-        # Create surface for layered effects
-        s = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+        # Main block body
+        rect = pygame.Rect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2)
 
-        # 1. Draw soft shadow (bottom-right)
-        shadow_rect = pygame.Rect(2, 2, CELL_SIZE - 2, CELL_SIZE - 2)
-        pygame.draw.rect(s, (0, 0, 0, 60), shadow_rect, border_radius=8)
+        if alpha < 255:
+            # Ghost piece with transparency
+            s = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+            pygame.draw.rect(s, (*color, alpha), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2))
+            pygame.draw.rect(s, (0, 0, 0, alpha), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2), 2)
+            self.screen.blit(s, (px, py))
+        else:
+            # Solid block with classic 3D effect
+            # Fill main color
+            pygame.draw.rect(self.screen, color, rect)
 
-        # 2. Draw main glass body with gradient effect
-        rect = pygame.Rect(0, 0, CELL_SIZE - 2, CELL_SIZE - 2)
+            # Light edges (top and left) - classic 3D highlight
+            lighter = (min(255, color[0] + 80), min(255, color[1] + 80), min(255, color[2] + 80))
+            pygame.draw.line(self.screen, lighter, (px + 1, py + 1), (px + CELL_SIZE - 2, py + 1), 3)  # Top
+            pygame.draw.line(self.screen, lighter, (px + 1, py + 1), (px + 1, py + CELL_SIZE - 2), 3)  # Left
 
-        # Base color with transparency for glass effect
-        base_alpha = min(alpha, 220)
-        pygame.draw.rect(s, (*color, base_alpha), rect, border_radius=8)
+            # Dark edges (bottom and right) - classic 3D shadow
+            darker = (max(0, color[0] - 60), max(0, color[1] - 60), max(0, color[2] - 60))
+            pygame.draw.line(self.screen, darker, (px + 1, py + CELL_SIZE - 2), (px + CELL_SIZE - 2, py + CELL_SIZE - 2), 3)  # Bottom
+            pygame.draw.line(self.screen, darker, (px + CELL_SIZE - 2, py + 1), (px + CELL_SIZE - 2, py + CELL_SIZE - 2), 3)  # Right
 
-        # 3. Top gradient overlay (lighter)
-        gradient_top = pygame.Surface((CELL_SIZE, CELL_SIZE // 2), pygame.SRCALPHA)
-        lighter = (min(255, color[0] + 60), min(255, color[1] + 60), min(255, color[2] + 60))
-        pygame.draw.rect(gradient_top, (*lighter, 100), (0, 0, CELL_SIZE - 2, CELL_SIZE // 2), border_radius=8)
-        s.blit(gradient_top, (0, 0))
-
-        # 4. Bottom gradient overlay (darker)
-        gradient_bottom = pygame.Surface((CELL_SIZE, CELL_SIZE // 2), pygame.SRCALPHA)
-        darker = (max(0, color[0] - 40), max(0, color[1] - 40), max(0, color[2] - 40))
-        pygame.draw.rect(gradient_bottom, (*darker, 80), (0, 0, CELL_SIZE - 2, CELL_SIZE // 2), border_radius=8)
-        s.blit(gradient_bottom, (0, CELL_SIZE // 2))
-
-        # 5. Glass shine (top-left bright highlight)
-        shine = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-        pygame.draw.ellipse(shine, (255, 255, 255, 180), (2, 2, CELL_SIZE // 2.2, CELL_SIZE // 2.5))
-        s.blit(shine, (0, 0))
-
-        # 6. White border for glass edge effect
-        pygame.draw.rect(s, (255, 255, 255, 150), rect, 2, border_radius=8)
-
-        # Blit final cell to screen
-        self.screen.blit(s, (px, py))
+            # Black outer border
+            pygame.draw.rect(self.screen, (0, 0, 0), (px, py, CELL_SIZE, CELL_SIZE), 1)
 
     def draw_board(self, board: Board, offset_x: int = 50, offset_y: int = 50) -> None:
         """Draw the game board grid and placed blocks."""
@@ -190,10 +187,15 @@ class Renderer:
         """Draw UI elements."""
         ui_x = 420
         
-        # Title with cute decoration
-        self.draw_text("CLAIRE'S TETRIS", WINDOW_WIDTH // 2, 30,
+        # Title with cat icon
+        self.draw_text("CLAIRE'S TETRIS", WINDOW_WIDTH // 2 - 30, 30,
                       self.font_medium, COLOR_TEXT, center=True, shadow=True)
-        self.draw_text("💖", WINDOW_WIDTH // 2 + 180, 30, self.font_small, center=True)
+
+        # Draw cat icon next to title
+        if self.cat_icon:
+            cat_x = WINDOW_WIDTH // 2 + 180
+            cat_y = 10
+            self.screen.blit(self.cat_icon, (cat_x, cat_y))
 
         # Info Panel
         self.draw_panel(ui_x, 70, 250, 180, "STATS")
