@@ -1,6 +1,7 @@
 """Mode selection menu."""
 
 import pygame
+import asyncio
 from typing import Optional
 from .constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, FPS,
@@ -184,6 +185,72 @@ class ModeSelectionMenu:
 
             pygame.display.flip()
             self.clock.tick(FPS)
+
+        return None
+
+    async def run_async(self) -> Optional[GameMode]:
+        """Run menu and return selected mode (async version for web)."""
+        running = True
+        while running:
+            mouse_pos = pygame.mouse.get_pos()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return None
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        return None
+                    elif event.key == pygame.K_1:
+                        return GameMode.CASUAL
+                    elif event.key == pygame.K_2:
+                        return GameMode.CLASSIC
+                    elif event.key == pygame.K_3:
+                        if self.save_manager.is_mode_unlocked("crazy"):
+                            return GameMode.CRAZY
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    for button in self.buttons:
+                        if button.is_clicked(mouse_pos):
+                            return button.mode
+
+            # Update
+            for button in self.buttons:
+                button.update(mouse_pos)
+
+            # Draw
+            self.screen.fill(COLOR_BACKGROUND)
+
+            # Title
+            title = self.font_title.render("CLAIRE'S TETRIS", True, COLOR_WHITE)
+            title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 80))
+            self.screen.blit(title, title_rect)
+
+            # Subtitle
+            subtitle = self.font_medium.render("Select Game Mode", True, COLOR_LIGHT_GRAY)
+            subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 140))
+            self.screen.blit(subtitle, subtitle_rect)
+
+            # Buttons
+            for button in self.buttons:
+                button.draw(self.screen, self.font_large, self.font_small)
+
+            # Instructions
+            instructions = [
+                "Click a mode or press 1-3",
+                f"Total lines cleared: {self.save_manager.get_total_lines()}",
+                "Unlock Crazy mode: Clear 50 lines in any mode",
+            ]
+            y = WINDOW_HEIGHT - 120
+            for text in instructions:
+                surf = self.font_small.render(text, True, COLOR_LIGHT_GRAY)
+                rect = surf.get_rect(center=(WINDOW_WIDTH // 2, y))
+                self.screen.blit(surf, rect)
+                y += 30
+
+            pygame.display.flip()
+            self.clock.tick(FPS)
+
+            # Yield control to event loop
+            await asyncio.sleep(0)
 
         return None
 

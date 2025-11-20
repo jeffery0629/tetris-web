@@ -3,6 +3,7 @@
 import pygame
 import time
 import random
+import asyncio
 from typing import Optional, Callable
 from .board import Board
 from .tetromino import Block, get_random_tetromino
@@ -10,6 +11,7 @@ from .pentomino import get_random_pentomino
 from .renderer import Renderer
 from .powerup import PowerUpManager, get_random_powerup, PowerUp
 from .modes import GameMode, get_mode_config
+from .touch_controls import TouchControlManager
 from .constants import (
     FPS, INITIAL_FALL_SPEED, LOCK_DELAY,
     SPEED_INCREASE_PER_LEVEL, LINES_PER_LEVEL,
@@ -39,6 +41,10 @@ class GameEnhanced:
 
         self.renderer = Renderer()
         self.clock = pygame.time.Clock()
+
+        # Touch controls for mobile
+        self.touch_controls = TouchControlManager()
+        self.enable_touch_controls = True  # Can be toggled for desktop
 
         # Game state
         self.state = GameState.PLAYING
@@ -393,7 +399,41 @@ class GameEnhanced:
                     self.last_down_move = current_time
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        """Handle pygame events."""
+        """Handle pygame events (keyboard + touch)."""
+        # Handle touch/mouse events
+        if self.enable_touch_controls:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                action = self.touch_controls.handle_touch_down(event.pos[0], event.pos[1])
+                if action == "rotate":
+                    self.rotate_block(clockwise=True)
+                    if self.is_on_ground:
+                        self.lock_timer = time.time()
+                elif action == "powerup":
+                    self.use_powerup()
+                elif action == "hold":
+                    self.hold_current_block()
+                elif action == "pause":
+                    if self.state == GameState.PLAYING:
+                        self.state = GameState.PAUSED
+                    elif self.state == GameState.PAUSED:
+                        self.state = GameState.PLAYING
+                elif action == "move_left":
+                    self.move_block(-1, 0)
+                elif action == "move_right":
+                    self.move_block(1, 0)
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.touch_controls.handle_touch_up(event.pos[0], event.pos[1])
+
+            elif event.type == pygame.MOUSEMOTION:
+                if event.buttons[0]:  # Left mouse button held
+                    action = self.touch_controls.handle_touch_motion(event.pos[0], event.pos[1])
+                    if action == "move_left":
+                        self.move_block(-1, 0)
+                    elif action == "move_right":
+                        self.move_block(1, 0)
+
+        # Handle keyboard events (keep for desktop compatibility)
         if event.type == pygame.KEYDOWN:
             if self.state == GameState.PLAYING:
                 if event.key == pygame.K_UP:
@@ -462,6 +502,10 @@ class GameEnhanced:
         if self.notification_text and time.time() - self.notification_time < self.notification_duration:
             self.renderer.draw_notification(self.notification_text)
 
+        # Draw touch controls
+        if self.enable_touch_controls:
+            self.touch_controls.draw(self.renderer.screen, self.renderer.font)
+
         # Draw overlays
         if self.state == GameState.PAUSED:
             self.renderer.draw_pause_screen()
@@ -490,7 +534,7 @@ class GameEnhanced:
         self.next_block = self.generate_block()
 
     def run(self) -> None:
-        """Main game loop."""
+        """Main game loop (synchronous version for desktop)."""
         running = True
         while running:
             dt = self.clock.tick(FPS) / 1000.0
@@ -503,9 +547,37 @@ class GameEnhanced:
                         running = False
                     else:
                         self.handle_event(event)
+                else:
+                    self.handle_event(event)
 
             self.handle_input()
             self.update(dt)
             self.render()
+
+        self.renderer.quit()
+
+    async def run_async(self) -> None:
+        """Main game loop (async version for web/Pygbag)."""
+        running = True
+        while running:
+            dt = self.clock.tick(FPS) / 1000.0
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE and self.state == GameState.GAME_OVER:
+                        running = False
+                    else:
+                        self.handle_event(event)
+                else:
+                    self.handle_event(event)
+
+            self.handle_input()
+            self.update(dt)
+            self.render()
+
+            # Yield control to event loop (critical for Pygbag)
+            await asyncio.sleep(0)
 
         self.renderer.quit()

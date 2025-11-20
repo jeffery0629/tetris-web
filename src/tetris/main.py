@@ -1,12 +1,13 @@
 """Complete main entry point with mode selection and save system."""
 
 import sys
+import asyncio
 from .menu import ModeSelectionMenu
 from .game import GameEnhanced
 from .save_manager import SaveManager
 
 
-def main():
+async def main():
     """Run the complete game with mode selection."""
     # Initialize save manager
     save_manager = SaveManager()
@@ -14,7 +15,7 @@ def main():
     while True:
         # Show mode selection menu
         menu = ModeSelectionMenu(save_manager)
-        selected_mode = menu.run()
+        selected_mode = await menu.run_async()
         menu.quit()
 
         if selected_mode is None:
@@ -24,7 +25,7 @@ def main():
         # Run game with selected mode
         game = GameEnhanced(mode=selected_mode)
         game.high_score = save_manager.get_high_score(selected_mode.value)
-        game.run()
+        await game.run_async()
 
         # Save high score and stats
         if game.score > 0:
@@ -40,4 +41,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
