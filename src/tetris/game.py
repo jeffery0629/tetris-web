@@ -282,12 +282,13 @@ class GameEnhanced:
 
         # Apply instant effects
         if powerup.type == PowerUpType.BOMB:
-            # Clear 3x3 area at bottom-center of board (most useful)
-            center_x = self.board.width // 2
-            center_y = self.board.height - 3  # Near bottom
-            cleared = self.board.clear_area(center_x, center_y, radius=1)
-            if cleared > 0:
+            # Find and clear the most problematic mixed area (holes and blocks)
+            center_x, center_y, score = self.board.find_most_problematic_area(radius=1)
+            if score > 0:
+                cleared = self.board.clear_area(center_x, center_y, radius=1)
                 self.show_notification(f"BOOM! Cleared {cleared} blocks!")
+            else:
+                self.show_notification("No problematic areas to bomb!")
 
         elif powerup.type == PowerUpType.LINE_ERASER:
             self.board.clear_bottom_rows(2)
@@ -402,6 +403,16 @@ class GameEnhanced:
         # Handle touch/mouse events
         if self.enable_touch_controls:
             if event.type == pygame.MOUSEBUTTONDOWN:
+                # Game Over screen buttons
+                if self.state == GameState.GAME_OVER:
+                    button_action = self.renderer.get_game_over_button_clicked(event.pos)
+                    if button_action == "restart":
+                        self.restart()
+                        return
+                    elif button_action == "quit":
+                        return  # Will exit game loop
+
+                # Playing state touch controls
                 action = self.touch_controls.handle_touch_down(event.pos[0], event.pos[1])
                 if action == "rotate":
                     self.rotate_block(clockwise=True)

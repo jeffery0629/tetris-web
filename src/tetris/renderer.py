@@ -277,10 +277,10 @@ class Renderer:
         self.screen.blit(overlay, (0, 0))
 
         # Modal Box
-        box_width, box_height = 400, 350
+        box_width, box_height = 450, 380
         box_x = (WINDOW_WIDTH - box_width) // 2
         box_y = (WINDOW_HEIGHT - box_height) // 2
-        
+
         self.draw_panel(box_x, box_y, box_width, box_height)
 
         self.draw_text("GAME OVER", WINDOW_WIDTH // 2, box_y + 40,
@@ -288,15 +288,71 @@ class Renderer:
 
         self.draw_text(f"Score: {score}", WINDOW_WIDTH // 2, box_y + 100,
                       self.font_small, COLOR_TEXT, center=True)
-        
+
         if score >= high_score and score > 0:
-            self.draw_text("✨ NEW HIGH SCORE! ✨", WINDOW_WIDTH // 2, box_y + 140,
+            self.draw_text("NEW HIGH SCORE!", WINDOW_WIDTH // 2, box_y + 140,
                           self.font_small, COLOR_ORANGE, center=True)
 
-        self.draw_text("Press R to Restart", WINDOW_WIDTH // 2, box_y + 240,
-                      self.font_small, COLOR_BUTTON_NORMAL, center=True)
-        self.draw_text("Press ESC to Quit", WINDOW_WIDTH // 2, box_y + 280,
-                      self.font_tiny, COLOR_GRAY, center=True)
+        # Touch-friendly buttons
+        button_width = 180
+        button_height = 60
+        button_y = box_y + 220
+
+        # Restart button
+        restart_rect = pygame.Rect(
+            WINDOW_WIDTH // 2 - button_width - 10,
+            button_y,
+            button_width,
+            button_height
+        )
+        pygame.draw.rect(self.screen, (100, 200, 100), restart_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (255, 255, 255), restart_rect, 3, border_radius=10)
+        self.draw_text("RESTART", restart_rect.centerx, restart_rect.centery,
+                      self.font_small, COLOR_WHITE, center=True)
+
+        # Quit button
+        quit_rect = pygame.Rect(
+            WINDOW_WIDTH // 2 + 10,
+            button_y,
+            button_width,
+            button_height
+        )
+        pygame.draw.rect(self.screen, (200, 100, 100), quit_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (255, 255, 255), quit_rect, 3, border_radius=10)
+        self.draw_text("MENU", quit_rect.centerx, quit_rect.centery,
+                      self.font_small, COLOR_WHITE, center=True)
+
+    def get_game_over_button_clicked(self, mouse_pos: tuple) -> Optional[str]:
+        """Check if game over buttons were clicked. Returns 'restart' or 'quit'."""
+        box_width, box_height = 450, 380
+        box_x = (WINDOW_WIDTH - box_width) // 2
+        box_y = (WINDOW_HEIGHT - box_height) // 2
+
+        button_width = 180
+        button_height = 60
+        button_y = box_y + 220
+
+        # Restart button
+        restart_rect = pygame.Rect(
+            WINDOW_WIDTH // 2 - button_width - 10,
+            button_y,
+            button_width,
+            button_height
+        )
+        if restart_rect.collidepoint(mouse_pos):
+            return "restart"
+
+        # Quit button
+        quit_rect = pygame.Rect(
+            WINDOW_WIDTH // 2 + 10,
+            button_y,
+            button_width,
+            button_height
+        )
+        if quit_rect.collidepoint(mouse_pos):
+            return "quit"
+
+        return None
 
     def draw_notification(self, text: str, y: int = 350) -> None:
         """Draw a bubble notification."""

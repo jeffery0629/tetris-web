@@ -70,23 +70,10 @@ class TouchControlManager:
         right_button_width = 180
         right_button_height = 95
 
-        # Hard drop button (bottom-right, upper position)
-        self.drop_button = TouchButton(
-            x=window_width - right_button_width - self.button_margin,
-            y=window_height - right_button_height * 2 - self.button_margin * 2,
-            width=right_button_width,
-            height=right_button_height,
-            label="Drop",
-            icon="DROP",
-            action="hard_drop",
-            color=(220, 100, 100),
-            hover_color=(240, 120, 120)
-        )
-
-        # Rotate button (bottom-right, lower position)
+        # Rotate button (bottom-right, upper position)
         self.rotate_button = TouchButton(
             x=window_width - right_button_width - self.button_margin,
-            y=window_height - right_button_height - self.button_margin,
+            y=window_height - right_button_height * 2 - self.button_margin * 2,
             width=right_button_width,
             height=right_button_height,
             label="Rotate",
@@ -94,6 +81,19 @@ class TouchControlManager:
             action="rotate",
             color=(100, 150, 200),
             hover_color=(120, 170, 220)
+        )
+
+        # Hard drop button (bottom-right, lower position)
+        self.drop_button = TouchButton(
+            x=window_width - right_button_width - self.button_margin,
+            y=window_height - right_button_height - self.button_margin,
+            width=right_button_width,
+            height=right_button_height,
+            label="Drop",
+            icon="DROP",
+            action="hard_drop",
+            color=(220, 100, 100),
+            hover_color=(240, 120, 120)
         )
 
         # Bottom buttons (PWR and HLD side by side)

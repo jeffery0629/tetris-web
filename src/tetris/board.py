@@ -144,6 +144,42 @@ class Board:
                         cleared += 1
         return cleared
 
+    def find_most_problematic_area(self, radius: int = 1) -> tuple:
+        """Find the area with most mixed empty/filled cells (problematic holes).
+
+        Args:
+            radius: Radius of area (1 = 3x3, 2 = 5x5)
+
+        Returns:
+            Tuple of (center_x, center_y, problem_score)
+        """
+        best_x, best_y, max_score = 0, 0, 0
+
+        # Search entire board for most problematic area
+        for y in range(radius, self.height - radius):
+            for x in range(radius, self.width - radius):
+                # Count filled and empty cells
+                filled = 0
+                empty = 0
+                for dy in range(-radius, radius + 1):
+                    for dx in range(-radius, radius + 1):
+                        if self.grid[y + dy][x + dx] is not None:
+                            filled += 1
+                        else:
+                            empty += 1
+
+                # Problem score: areas with both filled and empty are problematic
+                # Maximum score when 50/50 mix (most chaotic)
+                # Score = filled * empty (highest when both are non-zero)
+                problem_score = filled * empty
+
+                if problem_score > max_score:
+                    max_score = problem_score
+                    best_x = x
+                    best_y = y
+
+        return (best_x, best_y, max_score)
+
     def clear_bottom_rows(self, num_rows: int = 2) -> int:
         """Clear bottom N rows (for line eraser power-up).
 
