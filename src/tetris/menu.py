@@ -86,6 +86,13 @@ class ModeSelectionMenu:
         self.font_medium = pygame.font.Font(None, 36)
         self.font_small = pygame.font.Font(None, 24)
 
+        # Load cat icon
+        try:
+            cat_img = pygame.image.load("images/cat.jpg")
+            self.cat_icon = pygame.transform.scale(cat_img, (50, 50))
+        except (pygame.error, FileNotFoundError):
+            self.cat_icon = None
+
         # Create buttons - 3 modes (larger for better mobile touch)
         button_width = 420
         button_height = 140
@@ -159,14 +166,21 @@ class ModeSelectionMenu:
             self.screen.fill(COLOR_BACKGROUND)
 
             # Title
-            title = self.font_title.render("CLAIRE'S TETRIS", True, COLOR_WHITE)
+            from .constants import COLOR_TEXT
+            title = self.font_title.render("CLAIRE'S TETRIS", True, COLOR_TEXT)
             title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 80))
             self.screen.blit(title, title_rect)
 
-            # Subtitle
-            subtitle = self.font_medium.render("Select Game Mode", True, COLOR_LIGHT_GRAY)
+            # Subtitle with cat icon
+            subtitle = self.font_medium.render("Select Game Mode", True, COLOR_TEXT)
             subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 140))
             self.screen.blit(subtitle, subtitle_rect)
+
+            # Cat icon next to subtitle
+            if self.cat_icon:
+                cat_x = subtitle_rect.right + 10
+                cat_y = subtitle_rect.centery - 25
+                self.screen.blit(self.cat_icon, (cat_x, cat_y))
 
             # Buttons
             for button in self.buttons:
@@ -209,14 +223,21 @@ class ModeSelectionMenu:
             self.screen.fill(COLOR_BACKGROUND)
 
             # Title
-            title = self.font_title.render("CLAIRE'S TETRIS", True, COLOR_WHITE)
+            from .constants import COLOR_TEXT
+            title = self.font_title.render("CLAIRE'S TETRIS", True, COLOR_TEXT)
             title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 80))
             self.screen.blit(title, title_rect)
 
-            # Subtitle
-            subtitle = self.font_medium.render("Select Game Mode", True, COLOR_LIGHT_GRAY)
+            # Subtitle with cat icon
+            subtitle = self.font_medium.render("Select Game Mode", True, COLOR_TEXT)
             subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 140))
             self.screen.blit(subtitle, subtitle_rect)
+
+            # Cat icon next to subtitle
+            if self.cat_icon:
+                cat_x = subtitle_rect.right + 10
+                cat_y = subtitle_rect.centery - 25
+                self.screen.blit(self.cat_icon, (cat_x, cat_y))
 
             # Buttons
             for button in self.buttons:
