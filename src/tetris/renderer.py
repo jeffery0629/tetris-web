@@ -36,10 +36,10 @@ class Renderer:
         self.font_small = pygame.font.Font(self.font_name, 28)  # Slightly larger for readability
         self.font_tiny = pygame.font.Font(self.font_name, 20)
 
-        # Load cat icon for title display
+        # Load cat icon for title display with smooth scaling
         try:
             cat_img = pygame.image.load("images/cat.jpg")
-            self.cat_icon = pygame.transform.scale(cat_img, (40, 40))
+            self.cat_icon = pygame.transform.smoothscale(cat_img, (40, 40))
         except (pygame.error, FileNotFoundError):
             self.cat_icon = None
 

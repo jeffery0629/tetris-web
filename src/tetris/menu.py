@@ -86,10 +86,10 @@ class ModeSelectionMenu:
         self.font_medium = pygame.font.Font(None, 36)
         self.font_small = pygame.font.Font(None, 24)
 
-        # Load cat icon
+        # Load cat icon with smooth scaling for better quality
         try:
             cat_img = pygame.image.load("images/cat.jpg")
-            self.cat_icon = pygame.transform.scale(cat_img, (50, 50))
+            self.cat_icon = pygame.transform.smoothscale(cat_img, (50, 50))
         except (pygame.error, FileNotFoundError):
             self.cat_icon = None
 
