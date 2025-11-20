@@ -43,8 +43,9 @@ class ModeButton:
         pygame.draw.rect(screen, color, self.rect)
         pygame.draw.rect(screen, COLOR_WHITE, self.rect, 2)
 
-        # Text
-        text_color = COLOR_WHITE if self.unlocked else COLOR_LIGHT_GRAY
+        # Text color - use dark text on light background for better contrast
+        from .constants import COLOR_TEXT
+        text_color = COLOR_TEXT if self.unlocked else (140, 140, 140)
 
         # Mode name
         text = font_large.render(self.display_name, True, text_color)
@@ -171,19 +172,6 @@ class ModeSelectionMenu:
             for button in self.buttons:
                 button.draw(self.screen, self.font_large, self.font_small)
 
-            # Instructions
-            instructions = [
-                "Click a mode or press 1-3",
-                f"Total lines cleared: {self.save_manager.get_total_lines()}",
-                "Unlock Crazy mode: Clear 50 lines in any mode",
-            ]
-            y = WINDOW_HEIGHT - 120
-            for text in instructions:
-                surf = self.font_small.render(text, True, COLOR_LIGHT_GRAY)
-                rect = surf.get_rect(center=(WINDOW_WIDTH // 2, y))
-                self.screen.blit(surf, rect)
-                y += 30
-
             pygame.display.flip()
             self.clock.tick(FPS)
 
@@ -233,19 +221,6 @@ class ModeSelectionMenu:
             # Buttons
             for button in self.buttons:
                 button.draw(self.screen, self.font_large, self.font_small)
-
-            # Instructions
-            instructions = [
-                "Click a mode or press 1-3",
-                f"Total lines cleared: {self.save_manager.get_total_lines()}",
-                "Unlock Crazy mode: Clear 50 lines in any mode",
-            ]
-            y = WINDOW_HEIGHT - 120
-            for text in instructions:
-                surf = self.font_small.render(text, True, COLOR_LIGHT_GRAY)
-                rect = surf.get_rect(center=(WINDOW_WIDTH // 2, y))
-                self.screen.blit(surf, rect)
-                y += 30
 
             pygame.display.flip()
             self.clock.tick(FPS)
