@@ -51,10 +51,10 @@ POWERUP_DEFINITIONS = {
         description="Clear 3×3 area",
         duration=0.0,  # Instant effect
     ),
-    PowerUpType.RAINBOW: PowerUp(
-        type=PowerUpType.RAINBOW,
-        icon="🌈",
-        description="Wildcard block - clears any line",
+    PowerUpType.MAGNET: PowerUp(
+        type=PowerUpType.MAGNET,
+        icon="🧲",
+        description="Drop all floating blocks down",
         duration=0.0,
     ),
     PowerUpType.TIME_FREEZE: PowerUp(

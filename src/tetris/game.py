@@ -303,9 +303,9 @@ class GameEnhanced:
         elif powerup.type == PowerUpType.LINE_ERASER:
             self.board.clear_bottom_rows(2)
 
-        elif powerup.type == PowerUpType.RAINBOW:
-            # Rainbow effect handled in board logic
-            pass
+        elif powerup.type == PowerUpType.MAGNET:
+            # Drop all floating blocks down (gravity compress)
+            self.board.apply_gravity_compress()
 
     def hold_current_block(self) -> None:
         """Hold current block and swap with held block."""

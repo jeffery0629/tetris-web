@@ -114,7 +114,7 @@ class GameMode(Enum):
 class PowerUpType(Enum):
     """Power-up type enumeration."""
     BOMB = "bomb"              # Clears 3x3 area
-    RAINBOW = "rainbow"        # Wildcard block
+    MAGNET = "magnet"          # Gravity compress - drop all floating blocks
     TIME_FREEZE = "time_freeze"  # Pause falling
     GRAVITY_REVERSE = "gravity_reverse"  # Blocks fall upward
     LINE_ERASER = "line_eraser"  # Clear bottom 2 rows

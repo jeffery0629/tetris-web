@@ -213,3 +213,33 @@ class Board:
             # Add empty row at top
             self.grid.insert(0, [None for _ in range(self.width)])
         return cleared
+
+    def apply_gravity_compress(self) -> int:
+        """Drop all floating blocks down (magnet power-up).
+
+        Simulates gravity by moving all blocks down until they hit
+        the bottom or another block.
+
+        Returns:
+            Number of blocks that were moved
+        """
+        moved = 0
+
+        # Process each column independently, from bottom to top
+        for x in range(self.width):
+            # Collect all non-empty cells in this column (from bottom to top)
+            blocks = []
+            for y in range(self.height - 1, -1, -1):
+                if self.grid[y][x] is not None:
+                    blocks.append(self.grid[y][x])
+                    self.grid[y][x] = None  # Clear original position
+
+            # Place blocks at the bottom of the column
+            if blocks:
+                write_y = self.height - 1
+                for block_color in blocks:
+                    self.grid[write_y][x] = block_color
+                    write_y -= 1
+                    moved += 1
+
+        return moved
