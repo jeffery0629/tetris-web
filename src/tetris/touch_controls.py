@@ -49,9 +49,13 @@ class TouchControlManager:
         self.window_width = window_width
         self.window_height = window_height
 
-        # Button dimensions - redesigned layout
-        self.button_height = 70
-        self.button_margin = 10
+        # Button dimensions - redesigned layout for two-hand usage
+        # Increased sizes by ~10-20%
+        self.button_height = 78  # Base height +10%
+        self.button_margin = 12
+        
+        # Bottom row Y position
+        bottom_y = window_height - self.button_height - self.button_margin
 
         # Pause button (top-left corner)
         self.pause_button = TouchButton(
@@ -66,63 +70,66 @@ class TouchControlManager:
             hover_color=(150, 150, 150)
         )
 
-        # Right-side buttons (stacked vertically in bottom-right)
-        right_button_width = 180
-        right_button_height = 95
-
-        # Hard drop button (bottom-right, upper position)
+        # --- LEFT SIDE BUTTONS (Left Hand) ---
+        
+        # Hard Drop (Bottom Left - Primary Action) - Increased size
+        drop_width = 190  # +10%
         self.drop_button = TouchButton(
-            x=window_width - right_button_width - self.button_margin,
-            y=window_height - right_button_height * 2 - self.button_margin * 2,
-            width=right_button_width,
-            height=right_button_height,
+            x=self.button_margin,
+            y=bottom_y,
+            width=drop_width,
+            height=self.button_height,
             label="Drop",
             icon="DROP",
             action="hard_drop",
-            color=(220, 100, 100),
+            color=(220, 100, 100),   # Red
             hover_color=(240, 120, 120)
         )
-
-        # Rotate button (bottom-right, lower position)
-        self.rotate_button = TouchButton(
-            x=window_width - right_button_width - self.button_margin,
-            y=window_height - right_button_height - self.button_margin,
-            width=right_button_width,
-            height=right_button_height,
-            label="Rotate",
-            icon="ROT",
-            action="rotate",
-            color=(100, 150, 200),
-            hover_color=(120, 170, 220)
-        )
-
-        # Bottom buttons (PWR and HLD side by side)
-        bottom_button_width = (window_width - right_button_width - self.button_margin * 3) // 2
-        button_y = window_height - self.button_height - self.button_margin
-
-        # Power-up button (bottom-left)
+        
+        # Power-up (Left Inner - Secondary Action)
+        pwr_width = 120  # +10%
         self.powerup_button = TouchButton(
-            x=self.button_margin,
-            y=button_y,
-            width=bottom_button_width,
+            x=self.button_margin * 2 + drop_width,
+            y=bottom_y,
+            width=pwr_width,
             height=self.button_height,
             label="Power-up",
-            icon="POWER",
+            icon="PWR",
             action="powerup",
-            color=(200, 100, 200),
+            color=(200, 100, 200),   # Purple
             hover_color=(220, 120, 220)
         )
 
-        # Hold button (bottom-center)
+        # --- RIGHT SIDE BUTTONS (Right Hand) ---
+
+        # Rotate (Bottom Right - Primary Action) - Extra Large (+20%)
+        rot_width = 210  # +20%
+        rot_height = 85  # Slightly taller
+        rot_y = window_height - rot_height - self.button_margin
+        
+        self.rotate_button = TouchButton(
+            x=window_width - rot_width - self.button_margin,
+            y=rot_y,
+            width=rot_width,
+            height=rot_height,
+            label="Rotate",
+            icon="ROT",
+            action="rotate",
+            color=(100, 150, 200),   # Blue
+            hover_color=(120, 170, 220)
+        )
+
+        # Hold (Right Inner - Secondary Action)
+        hold_width = 120 # +10%
         self.hold_button = TouchButton(
-            x=self.button_margin * 2 + bottom_button_width,
-            y=button_y,
-            width=bottom_button_width,
+            x=window_width - rot_width - hold_width - self.button_margin * 2,
+            y=bottom_y,
+            width=hold_width,
             height=self.button_height,
             label="Hold",
             icon="HOLD",
             action="hold",
-            color=(200, 150, 100),
+            color=(200, 150, 100),   # Orange
             hover_color=(220, 170, 120)
         )
 
@@ -139,13 +146,16 @@ class TouchControlManager:
         self.right_pressed = False
 
         # Expanded game area bounds for easier touch control
-        # Leave space below pause button (pause button: y=10, height=50, so bottom is at 60)
+        # Leave space below pause button
         pause_bottom = self.pause_button.y + self.pause_button.height
-        self.game_area_top = pause_bottom + 10  # 10px gap below pause button
-        self.game_area_bottom = window_height - self.button_height - self.button_margin  # Just above bottom buttons (expanded)
+        self.game_area_top = pause_bottom + 10 
+        
+        # Bottom limit is above the buttons (use higher Y of the buttons)
+        self.game_area_bottom = min(bottom_y, rot_y) - 10
+        
         # Allow touch in entire screen width; buttons already capture presses with higher priority
-        self.game_area_right = window_width  # Include Next/Hold panels fully
-        # Center line is at half of total window width (not game_area_right)
+        self.game_area_right = window_width
+        # Center line is at half of total window width
         self.game_area_center = window_width // 2
 
     def handle_touch_down(self, x: int, y: int) -> Optional[str]:

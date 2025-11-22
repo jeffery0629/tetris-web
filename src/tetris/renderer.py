@@ -185,7 +185,9 @@ class Renderer:
     def draw_ui(self, score: int, level: int, lines: int, high_score: int = 0,
                 mode: str = "Classic") -> None:
         """Draw UI elements."""
-        ui_x = 420
+        # New UI Layout Base X
+        ui_x = 400
+        panel_width = 360
         
         # Title with cat icon
         self.draw_text("CLAIRE'S TETRIS", WINDOW_WIDTH // 2 - 30, 30,
@@ -197,21 +199,29 @@ class Renderer:
             cat_y = 10
             self.screen.blit(self.cat_icon, (cat_x, cat_y))
 
-        # Info Panel
-        self.draw_panel(ui_x, 70, 250, 180, "STATS")
+        # Stats Panel (Middle Row - Compact)
+        # Positioned below Next/Hold panels
+        stats_y = 210
+        self.draw_panel(ui_x, stats_y, panel_width, 180, "STATS")
         
-        start_y = 110
-        gap = 35
+        start_y = stats_y + 40
+        gap = 30
         
+        # Column 1
         self.draw_text(f"Mode: {mode}", ui_x + 20, start_y, self.font_tiny)
-        self.draw_text(f"Score: {score}", ui_x + 20, start_y + gap, self.font_small)
-        self.draw_text(f"High: {high_score}", ui_x + 20, start_y + gap*2, self.font_tiny, COLOR_GRAY)
-        self.draw_text(f"Level: {level}", ui_x + 20, start_y + gap*3, self.font_small)
-        self.draw_text(f"Lines: {lines}", ui_x + 140, start_y + gap*3, self.font_small)
+        self.draw_text(f"Score: {score}", ui_x + 20, start_y + gap, self.font_medium)
+        
+        # Column 2
+        self.draw_text(f"Level: {level}", ui_x + 200, start_y, self.font_small)
+        self.draw_text(f"Lines: {lines}", ui_x + 200, start_y + gap, self.font_small)
+        
+        # High Score at bottom
+        self.draw_text(f"High Score: {high_score}", ui_x + 20, start_y + gap*2 + 10, self.font_tiny, COLOR_GRAY)
 
-    def draw_next_block(self, block: Optional[Block], x: int = 420, y: int = 270) -> None:
+    def draw_next_block(self, block: Optional[Block], x: int = 400, y: int = 70) -> None:
         """Draw next block preview."""
-        self.draw_panel(x, y, 120, 120, "NEXT")
+        # Top Right - Left side
+        self.draw_panel(x, y, 170, 120, "NEXT")
 
         if block:
             preview_block = block.copy()
@@ -219,32 +229,44 @@ class Renderer:
             preview_block.y = 0
             
             # Center in panel
-            preview_offset_x = x + 30
+            preview_offset_x = x + 55
             preview_offset_y = y + 45
             
             self.draw_block(preview_block, preview_offset_x, preview_offset_y)
 
-    def draw_hold_block(self, block: Optional[Block], x: int = 560, y: int = 270) -> None:
+    def draw_hold_block(self, block: Optional[Block], x: int = 590, y: int = 70) -> None:
         """Draw held block."""
-        self.draw_panel(x, y, 110, 120, "HOLD")
+        # Top Right - Right side
+        self.draw_panel(x, y, 170, 120, "HOLD")
 
         if block:
             preview_block = block.copy()
             preview_block.x = 0
             preview_block.y = 0
             
-            self.draw_block(preview_block, x + 25, y + 45)
+            # Center in panel
+            preview_offset_x = x + 55
+            preview_offset_y = y + 45
+            
+            self.draw_block(preview_block, preview_offset_x, preview_offset_y)
 
     def draw_powerup_inventory(self, inventory: list, active_effects: list,
-                               x: int = 420, y: int = 410) -> None:
+                               x: int = 400, y: int = 410) -> None:
         """Draw power-up inventory (compact version)."""
-        self.draw_panel(x, y, 250, 120, "POWER-UPS")
+        # Bottom Row
+        panel_width = 360
+        self.draw_panel(x, y, panel_width, 120, "POWER-UPS")
 
-        # Draw inventory slots (compact, side by side)
+        # Draw inventory slots (spread out)
         slot_y = y + 40
+        slot_width = 100
+        # Calculate spacing to center the two slots
+        total_slots_width = (slot_width * 2) + 20
+        start_x = x + (panel_width - total_slots_width) // 2
+        
         for i in range(2):
-            slot_x = x + 15 + i * 110
-            slot_rect = pygame.Rect(slot_x, slot_y, 100, 50)
+            slot_x = start_x + i * (slot_width + 20)
+            slot_rect = pygame.Rect(slot_x, slot_y, slot_width, 50)
             
             self.draw_rounded_rect(self.screen, slot_rect, (245, 245, 255), radius=10)
 
