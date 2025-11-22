@@ -52,6 +52,7 @@ class TouchControlManager:
         # Button dimensions
         self.button_height = 78
         self.button_margin = 12
+        self.button_gap = 12
         
         # Bottom row Y position
         bottom_y = window_height - self.button_height - self.button_margin
@@ -71,14 +72,23 @@ class TouchControlManager:
         )
 
         # --- BOTTOM ROW BUTTONS ---
+        # Layout: [ DROP (Wide) ] [ PWR (Center) ] [ ROT (Wide) ]
         
-        # 1. Hard Drop (Bottom Left)
-        # Wide button
-        drop_width = 200
+        # 1. Calculate widths
+        # Total usable width = Window - (Margin * 2) - (Gap * 2)
+        # Let PWR be 160px wide
+        # Side buttons take remaining space equally
+        
+        pwr_width = 160
+        side_button_width = (window_width - (self.button_margin * 2) - (self.button_gap * 2) - pwr_width) // 2
+        
+        # 2. Define Buttons
+        
+        # Hard Drop (Bottom Left)
         self.drop_button = TouchButton(
             x=self.button_margin,
             y=bottom_y,
-            width=drop_width,
+            width=side_button_width,
             height=self.button_height,
             label="Drop",
             icon="DROP",
@@ -87,11 +97,9 @@ class TouchControlManager:
             hover_color=(240, 120, 120)
         )
         
-        # 2. Power-up (Next to Drop)
-        # Wide button (similar to Drop/Rot)
-        pwr_width = 200
+        # Power-up (Bottom Center)
         self.powerup_button = TouchButton(
-            x=self.button_margin * 2 + drop_width,
+            x=self.button_margin + side_button_width + self.button_gap,
             y=bottom_y,
             width=pwr_width,
             height=self.button_height,
@@ -102,17 +110,12 @@ class TouchControlManager:
             hover_color=(220, 120, 220)
         )
 
-        # 3. Rotate (Bottom Right)
-        # Extra Large
-        rot_width = 210
-        rot_height = 85
-        rot_y = window_height - rot_height - self.button_margin
-        
+        # Rotate (Bottom Right)
         self.rotate_button = TouchButton(
-            x=window_width - rot_width - self.button_margin,
-            y=rot_y,
-            width=rot_width,
-            height=rot_height,
+            x=window_width - side_button_width - self.button_margin,
+            y=bottom_y,
+            width=side_button_width,
+            height=self.button_height,
             label="Rotate",
             icon="ROT",
             action="rotate",
@@ -124,12 +127,13 @@ class TouchControlManager:
 
         # 4. Hold (Below Power-up Panel, Right Side)
         # Placed in the gap between Power-ups panel and bottom buttons
-        # Power-ups panel is at y=410, height=120 -> ends at 530
+        # Power-ups panel ends at y=550 (410 + 140)
         # Bottom buttons start at ~660
-        # Center vertically in that gap ~595
+        # Gap is ~110px
+        # Center vertically in that gap ~605
         hold_width = 300 # Wide button to fill the right area space
         hold_x = 430 # Aligned with right UI column
-        hold_y = 555
+        hold_y = 580
         
         self.hold_button = TouchButton(
             x=hold_x,
@@ -160,7 +164,7 @@ class TouchControlManager:
         pause_bottom = self.pause_button.y + self.pause_button.height
         self.game_area_top = pause_bottom + 10 
         
-        # Bottom limit is above the HOLD button (since it's higher up now)
+        # Bottom limit is above the HOLD button
         self.game_area_bottom = hold_y - 10
         
         # Allow touch in entire screen width; buttons already capture presses with higher priority

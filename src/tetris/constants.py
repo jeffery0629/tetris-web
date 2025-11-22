@@ -44,7 +44,7 @@ LINES_PER_LEVEL = 10
 POWERUP_SPAWN_RATE = 0.20
 MAX_POWERUP_INVENTORY = 2
 
-# --- CUTE PASTEL COLOR PALETTE ---
+# --- CUTE PASTEL COLOR PALETTE (UPDATED) ---
 
 # Basic Colors
 COLOR_BLACK = (60, 50, 60)  # Soft charcoal instead of pure black
@@ -53,44 +53,47 @@ COLOR_GRAY = (180, 180, 190)
 COLOR_DARK_GRAY = (100, 90, 100)
 COLOR_LIGHT_GRAY = (220, 220, 230)
 
-# Backgrounds
-COLOR_BACKGROUND = (255, 248, 250)  # Creamy Pink / White
-COLOR_GRID_LINE = (240, 220, 230)   # Very faint pink grid
-COLOR_BOARD_BG = (255, 255, 255)    # Pure white board background
+# Backgrounds (Gradient base colors)
+COLOR_BG_TOP = (255, 240, 245)     # Very light pink
+COLOR_BG_BOTTOM = (230, 230, 250)  # Lavender mist
+COLOR_BACKGROUND = COLOR_BG_TOP    # Fallback solid color
+
+COLOR_GRID_LINE = (200, 190, 210)  # Slightly darker for dots/fine lines
+COLOR_BOARD_BG = (255, 255, 255, 200) # Semi-transparent white for board
 
 # Text & UI
-COLOR_TEXT = (90, 80, 100)          # Soft purple-grey text
+COLOR_TEXT = (80, 70, 90)          # Soft purple-grey text
 COLOR_TEXT_SHADOW = (255, 255, 255) # White shadow/halo
-COLOR_BUTTON_NORMAL = (255, 200, 210) # Pastel Pink Button
-COLOR_BUTTON_HOVER = (255, 180, 195)
+COLOR_BUTTON_NORMAL = (255, 215, 225) # Pastel Pink Button
+COLOR_BUTTON_HOVER = (255, 195, 205)
 COLOR_BUTTON_LOCKED = (230, 230, 230)
 
-# Vibrant Block Colors with 3D effect (Classic)
-COLOR_CYAN = (0, 240, 255)          # I - Bright Cyan
-COLOR_YELLOW = (255, 220, 0)        # O - Golden Yellow
-COLOR_PURPLE = (180, 0, 255)        # T - Vibrant Purple
-COLOR_GREEN = (0, 255, 100)         # S - Bright Green
-COLOR_RED = (255, 50, 50)           # Z - Bright Red
-COLOR_BLUE = (0, 100, 255)          # J - Deep Blue
-COLOR_ORANGE = (255, 140, 0)        # L - Vibrant Orange
+# Macaron / Pastel Block Colors (Classic)
+COLOR_CYAN = (130, 238, 253)       # I - Pastel Cyan
+COLOR_YELLOW = (255, 245, 157)     # O - Pastel Yellow
+COLOR_PURPLE = (209, 196, 233)     # T - Pastel Purple
+COLOR_GREEN = (165, 214, 167)      # S - Pastel Green
+COLOR_RED = (255, 171, 145)        # Z - Pastel Red/Salmon
+COLOR_BLUE = (144, 202, 249)       # J - Pastel Blue
+COLOR_ORANGE = (255, 204, 128)     # L - Pastel Orange
 
-# Vibrant Block Colors (Simple)
-COLOR_LIGHT_BLUE = (100, 200, 255)  # I3 - Sky Blue
-COLOR_LIGHT_ORANGE = (255, 160, 80) # L3 - Tangerine
+# Macaron Block Colors (Simple)
+COLOR_LIGHT_BLUE = (179, 229, 252)  # I3 - Light Sky Blue
+COLOR_LIGHT_ORANGE = (255, 224, 178) # L3 - Light Tangerine
 
-# Vibrant Block Colors (Crazy) - Saturated Palette
-COLOR_PINK = (255, 105, 180)        # Hot Pink
-COLOR_TEAL = (0, 200, 200)          # Turquoise
-COLOR_LIME = (180, 255, 0)          # Neon Lime
-COLOR_MAGENTA = (255, 0, 255)       # Magenta
-COLOR_NAVY = (70, 70, 200)          # Navy Blue
-COLOR_OLIVE = (180, 180, 0)         # Olive
-COLOR_MAROON = (180, 0, 0)          # Maroon
-COLOR_AQUA = (0, 255, 255)          # Aqua
-COLOR_FUCHSIA = (255, 0, 200)       # Fuchsia
-COLOR_SILVER = (192, 192, 192)      # Silver
-COLOR_GOLD = (255, 215, 0)          # Gold
-COLOR_CORAL = (255, 127, 80)        # Coral
+# Macaron Block Colors (Crazy)
+COLOR_PINK = (248, 187, 208)        # Pastel Pink
+COLOR_TEAL = (178, 223, 219)        # Pastel Teal
+COLOR_LIME = (220, 237, 200)        # Pastel Lime
+COLOR_MAGENTA = (244, 143, 177)     # Pastel Magenta
+COLOR_NAVY = (159, 168, 218)        # Pastel Indigo
+COLOR_OLIVE = (230, 238, 156)       # Pastel Olive
+COLOR_MAROON = (239, 154, 154)      # Pastel Red
+COLOR_AQUA = (128, 222, 234)        # Pastel Aqua
+COLOR_FUCHSIA = (240, 98, 146)      # Pastel Fuchsia (slightly darker for contrast)
+COLOR_SILVER = (207, 216, 220)      # Pastel Blue Grey
+COLOR_GOLD = (255, 229, 127)        # Pastel Gold
+COLOR_CORAL = (255, 138, 101)       # Pastel Coral
 
 # Power-up colors
 COLOR_POWERUP_GLOW = (255, 255, 200)

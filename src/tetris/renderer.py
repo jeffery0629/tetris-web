@@ -6,7 +6,8 @@ from .board import Board
 from .tetromino import Block
 from .constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, CELL_SIZE,
-    COLOR_BACKGROUND, COLOR_GRID_LINE, COLOR_TEXT,
+    COLOR_BACKGROUND, COLOR_BG_TOP, COLOR_BG_BOTTOM,
+    COLOR_GRID_LINE, COLOR_TEXT,
     COLOR_WHITE, COLOR_BLACK, COLOR_DARK_GRAY,
     COLOR_LIGHT_GRAY, COLOR_GRAY, COLOR_BOARD_BG, COLOR_BUTTON_NORMAL,
     COLOR_BUTTON_HOVER, COLOR_YELLOW, COLOR_GREEN,
@@ -42,6 +43,20 @@ class Renderer:
             self.cat_icon = pygame.transform.smoothscale(cat_img, (40, 40))
         except (pygame.error, FileNotFoundError):
             self.cat_icon = None
+            
+        # Create gradient background surface once
+        self.bg_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self._fill_gradient(self.bg_surface, COLOR_BG_TOP, COLOR_BG_BOTTOM)
+
+    def _fill_gradient(self, surface: pygame.Surface, top_color: Tuple[int, int, int], bottom_color: Tuple[int, int, int]) -> None:
+        """Fill surface with vertical gradient."""
+        height = surface.get_height()
+        # Create a 1x2 surface with the two colors and smoothscale it
+        gradient = pygame.Surface((1, 2))
+        gradient.set_at((0, 0), top_color)
+        gradient.set_at((0, 1), bottom_color)
+        gradient = pygame.transform.smoothscale(gradient, (surface.get_width(), height))
+        surface.blit(gradient, (0, 0))
 
     def draw_rounded_rect(self, surface: pygame.Surface, rect: pygame.Rect, color: Tuple[int, int, int], radius: int = 10, width: int = 0) -> None:
         """Helper to draw rounded rectangles."""
@@ -59,28 +74,35 @@ class Renderer:
         rect = pygame.Rect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2)
 
         if alpha < 255:
-            # Ghost piece with transparency
-            s = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            pygame.draw.rect(s, (*color, alpha), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2))
-            pygame.draw.rect(s, (0, 0, 0, alpha), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2), 2)
-            self.screen.blit(s, (px, py))
+            # Ghost piece with semi-transparent fill (updated style)
+            # Use a lighter alpha for the fill to look "glassy"
+            ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+            
+            # Fill with low opacity (e.g., 60)
+            pygame.draw.rect(ghost_surface, (*color, 60), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2), border_radius=4)
+            
+            # Outline with slightly higher opacity
+            pygame.draw.rect(ghost_surface, (*color, 120), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2), 2, border_radius=4)
+            
+            self.screen.blit(ghost_surface, (px, py))
         else:
-            # Solid block with classic 3D effect
+            # Solid block with "Macaron" style (softer, less harsh 3D)
             # Fill main color
-            pygame.draw.rect(self.screen, color, rect)
+            pygame.draw.rect(self.screen, color, rect, border_radius=4)
 
-            # Light edges (top and left) - classic 3D highlight
-            lighter = (min(255, color[0] + 80), min(255, color[1] + 80), min(255, color[2] + 80))
-            pygame.draw.line(self.screen, lighter, (px + 1, py + 1), (px + CELL_SIZE - 2, py + 1), 3)  # Top
-            pygame.draw.line(self.screen, lighter, (px + 1, py + 1), (px + 1, py + CELL_SIZE - 2), 3)  # Left
+            # Subtle highlight (top-left)
+            highlight = (min(255, color[0] + 40), min(255, color[1] + 40), min(255, color[2] + 40))
+            # Draw a soft rounded highlight instead of harsh lines
+            pygame.draw.line(self.screen, highlight, (px + 4, py + 4), (px + CELL_SIZE - 6, py + 4), 2)
+            pygame.draw.line(self.screen, highlight, (px + 4, py + 4), (px + 4, py + CELL_SIZE - 6), 2)
 
-            # Dark edges (bottom and right) - classic 3D shadow
-            darker = (max(0, color[0] - 60), max(0, color[1] - 60), max(0, color[2] - 60))
-            pygame.draw.line(self.screen, darker, (px + 1, py + CELL_SIZE - 2), (px + CELL_SIZE - 2, py + CELL_SIZE - 2), 3)  # Bottom
-            pygame.draw.line(self.screen, darker, (px + CELL_SIZE - 2, py + 1), (px + CELL_SIZE - 2, py + CELL_SIZE - 2), 3)  # Right
+            # Subtle shadow (bottom-right) - reduced intensity
+            shadow = (max(0, color[0] - 30), max(0, color[1] - 30), max(0, color[2] - 30))
+            pygame.draw.line(self.screen, shadow, (px + 4, py + CELL_SIZE - 4), (px + CELL_SIZE - 4, py + CELL_SIZE - 4), 2)
+            pygame.draw.line(self.screen, shadow, (px + CELL_SIZE - 4, py + 4), (px + CELL_SIZE - 4, py + CELL_SIZE - 4), 2)
 
-            # Black outer border
-            pygame.draw.rect(self.screen, (0, 0, 0), (px, py, CELL_SIZE, CELL_SIZE), 1)
+            # No black border for softer look
+            # pygame.draw.rect(self.screen, (0, 0, 0), (px, py, CELL_SIZE, CELL_SIZE), 1)
 
     def draw_board(self, board: Board, offset_x: int = 50, offset_y: int = 50) -> None:
         """Draw the game board grid and placed blocks."""
@@ -92,19 +114,21 @@ class Renderer:
             board.width * CELL_SIZE + 10, 
             board.height * CELL_SIZE + 10
         )
-        self.draw_rounded_rect(self.screen, board_rect, COLOR_WHITE, radius=10)
-        pygame.draw.rect(self.screen, COLOR_GRID_LINE, board_rect, 3, border_radius=10)
+        
+        # Semi-transparent white background for board
+        board_bg = pygame.Surface((board_rect.width, board_rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(board_bg, (255, 255, 255, 180), board_bg.get_rect(), border_radius=10)
+        self.screen.blit(board_bg, board_rect)
+        
+        # Draw glowing/soft border
+        self.draw_rounded_rect(self.screen, board_rect, COLOR_GRID_LINE, radius=10, width=2)
 
-        # Draw soft grid lines (dots or very light lines)
+        # Draw grid dots instead of lines for cleaner look
         for y in range(board.height + 1):
-            start_pos = (offset_x, offset_y + y * CELL_SIZE)
-            end_pos = (offset_x + board.width * CELL_SIZE, offset_y + y * CELL_SIZE)
-            pygame.draw.line(self.screen, COLOR_GRID_LINE, start_pos, end_pos, 1)
-            
-        for x in range(board.width + 1):
-            start_pos = (offset_x + x * CELL_SIZE, offset_y)
-            end_pos = (offset_x + x * CELL_SIZE, offset_y + board.height * CELL_SIZE)
-            pygame.draw.line(self.screen, COLOR_GRID_LINE, start_pos, end_pos, 1)
+            for x in range(board.width + 1):
+                pos_x = offset_x + x * CELL_SIZE
+                pos_y = offset_y + y * CELL_SIZE
+                pygame.draw.circle(self.screen, COLOR_GRID_LINE, (pos_x, pos_y), 1)
 
         # Draw placed blocks
         for y in range(board.height):
@@ -141,8 +165,8 @@ class Renderer:
             if y >= 0:
                 px = offset_x + x * CELL_SIZE
                 py = offset_y + y * CELL_SIZE
-                rect = pygame.Rect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4)
-                pygame.draw.rect(self.screen, (ghost.color[0], ghost.color[1], ghost.color[2]), rect, 2, border_radius=6)
+                # Ghost rendering logic is now handled inside draw_cell with alpha < 255
+                self.draw_cell(x, y, ghost.color, offset_x, offset_y, alpha=100)
 
     def draw_text(self, text: str, x: int, y: int, font: pygame.font.Font = None,
                   color: Tuple[int, int, int] = COLOR_TEXT, center: bool = False,
@@ -172,10 +196,16 @@ class Renderer:
         
         # Shadow
         shadow_rect = pygame.Rect(x + 4, y + 4, width, height)
-        self.draw_rounded_rect(self.screen, shadow_rect, (230, 220, 230), radius=15)
+        self.draw_rounded_rect(self.screen, shadow_rect, (220, 210, 225), radius=15)
         
-        # Main Card
-        self.draw_rounded_rect(self.screen, rect, COLOR_WHITE, radius=15)
+        # Main Card - Use slight transparency if possible or just white
+        # self.draw_rounded_rect(self.screen, rect, COLOR_WHITE, radius=15)
+        
+        # Use surface for transparency
+        s = pygame.Surface((width, height), pygame.SRCALPHA)
+        pygame.draw.rect(s, (255, 255, 255, 230), s.get_rect(), border_radius=15)
+        self.screen.blit(s, (x, y))
+        
         # Border
         pygame.draw.rect(self.screen, COLOR_BUTTON_NORMAL, rect, 2, border_radius=15)
         
@@ -420,7 +450,8 @@ class Renderer:
 
     def clear_screen(self) -> None:
         """Clear screen."""
-        self.screen.fill(COLOR_BACKGROUND)
+        # Clear screen using background surface (gradient)
+        self.screen.blit(self.bg_surface, (0, 0))
 
     def update_display(self) -> None:
         """Update the display."""
