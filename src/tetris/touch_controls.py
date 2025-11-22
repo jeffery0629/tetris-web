@@ -57,11 +57,12 @@ class TouchControlManager:
         bottom_y = window_height - self.button_height - self.button_margin
 
         # Pause button (top-left corner)
+        # Positioned higher to avoid overlap with game board (offset_y=50)
         self.pause_button = TouchButton(
             x=10,
-            y=10,
-            width=60,
-            height=50,
+            y=5,
+            width=70,
+            height=40,
             label="Pause",
             icon="||",
             action="pause",

@@ -254,20 +254,22 @@ class Renderer:
                                x: int = 380, y: int = 410) -> None:
         """Draw power-up inventory (compact version)."""
         panel_width = 400
-        self.draw_panel(x, y, panel_width, 120, "POWER-UPS")
+        panel_height = 140  # Increased from 120 to 140
+        self.draw_panel(x, y, panel_width, panel_height, "POWER-UPS")
 
-        # Draw inventory slots (compact, side by side)
-        slot_y = y + 40
-        slot_width = 120
-        
+        # Draw inventory slots (larger, side by side)
+        slot_y = y + 45
+        slot_width = 160  # Increased from 120 to 160
+        slot_height = 65  # Increased from 50 to 65
+
         # Center slots in the wider panel
-        # Panel 400. Slots 2 * 120 + gap.
+        # Panel 400. Slots 2 * 160 + gap.
         total_width = 2 * slot_width + 30
         start_x = x + (panel_width - total_width) // 2
 
         for i in range(2):
             slot_x = start_x + i * (slot_width + 30)
-            slot_rect = pygame.Rect(slot_x, slot_y, slot_width, 50)
+            slot_rect = pygame.Rect(slot_x, slot_y, slot_width, slot_height)
             
             self.draw_rounded_rect(self.screen, slot_rect, (245, 245, 255), radius=10)
 
@@ -284,12 +286,13 @@ class Renderer:
                     "ghost_mode": "GHST"
                 }
                 name = name_map.get(powerup.type.value, powerup.type.value[:4].upper())
-                self.draw_text(name, slot_x + 35, slot_y + 15,
-                             self.font_tiny, COLOR_TEXT)
+                # Center text in larger slot (160x65)
+                self.draw_text(name, slot_x + slot_width // 2 - 20, slot_y + slot_height // 2 - 10,
+                             self.font_small, COLOR_TEXT)
             else:
                 pygame.draw.rect(self.screen, COLOR_LIGHT_GRAY, slot_rect, 1, border_radius=10)
-                self.draw_text("---", slot_x + 45, slot_y + 15,
-                             self.font_tiny, COLOR_LIGHT_GRAY)
+                self.draw_text("---", slot_x + slot_width // 2 - 15, slot_y + slot_height // 2 - 10,
+                             self.font_small, COLOR_LIGHT_GRAY)
     
     # Note: Game Over and Pause methods remain unchanged but renderer class continues below
 
