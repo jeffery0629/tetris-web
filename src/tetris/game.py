@@ -502,8 +502,9 @@ class GameEnhanced:
         """Render current game state."""
         self.renderer.clear_screen()
 
-        offset_x = 50
-        offset_y = 80
+        # Adjusted offsets for larger board (CELL_SIZE=30)
+        offset_x = 40
+        offset_y = 50
 
         # Draw board and blocks
         self.renderer.draw_board(self.board, offset_x, offset_y)

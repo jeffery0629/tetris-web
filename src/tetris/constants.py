@@ -9,7 +9,8 @@ WINDOW_HEIGHT = 750
 FPS = 60
 
 # Cell size for rendering (in pixels)
-CELL_SIZE = 27
+# Increased from 27 to 30 (+11%) to make game board larger
+CELL_SIZE = 30
 
 # Grid dimensions for different modes
 SIMPLE_GRID = (8, 16)    # (cols, rows)

@@ -185,9 +185,12 @@ class Renderer:
     def draw_ui(self, score: int, level: int, lines: int, high_score: int = 0,
                 mode: str = "Classic") -> None:
         """Draw UI elements."""
-        # New UI Layout Base X
-        ui_x = 400
-        panel_width = 360
+        # UI Layout Base X
+        # Move panels to the left slightly to accommodate larger board
+        # Board takes up ~340px width (offset 40 + 300)
+        # So we can start UI around 380
+        ui_x = 380
+        panel_width = 400  # Increased panel width to fill right space
         
         # Title with cat icon
         self.draw_text("CLAIRE'S TETRIS", WINDOW_WIDTH // 2 - 30, 30,
@@ -211,17 +214,17 @@ class Renderer:
         self.draw_text(f"Mode: {mode}", ui_x + 20, start_y, self.font_tiny)
         self.draw_text(f"Score: {score}", ui_x + 20, start_y + gap, self.font_medium)
         
-        # Column 2
-        self.draw_text(f"Level: {level}", ui_x + 200, start_y, self.font_small)
-        self.draw_text(f"Lines: {lines}", ui_x + 200, start_y + gap, self.font_small)
+        # Column 2 (Adjusted for wider panel)
+        self.draw_text(f"Level: {level}", ui_x + 220, start_y, self.font_small)
+        self.draw_text(f"Lines: {lines}", ui_x + 220, start_y + gap, self.font_small)
         
         # High Score at bottom
         self.draw_text(f"High Score: {high_score}", ui_x + 20, start_y + gap*2 + 10, self.font_tiny, COLOR_GRAY)
 
-    def draw_next_block(self, block: Optional[Block], x: int = 400, y: int = 70) -> None:
+    def draw_next_block(self, block: Optional[Block], x: int = 380, y: int = 70) -> None:
         """Draw next block preview."""
         # Top Right - Left side
-        self.draw_panel(x, y, 170, 120, "NEXT")
+        self.draw_panel(x, y, 190, 120, "NEXT")
 
         if block:
             preview_block = block.copy()
@@ -229,7 +232,7 @@ class Renderer:
             preview_block.y = 0
             
             # Center in panel
-            preview_offset_x = x + 55
+            preview_offset_x = x + 65
             preview_offset_y = y + 45
             
             self.draw_block(preview_block, preview_offset_x, preview_offset_y)
@@ -237,7 +240,7 @@ class Renderer:
     def draw_hold_block(self, block: Optional[Block], x: int = 590, y: int = 70) -> None:
         """Draw held block."""
         # Top Right - Right side
-        self.draw_panel(x, y, 170, 120, "HOLD")
+        self.draw_panel(x, y, 190, 120, "HOLD")
 
         if block:
             preview_block = block.copy()
@@ -245,27 +248,25 @@ class Renderer:
             preview_block.y = 0
             
             # Center in panel
-            preview_offset_x = x + 55
-            preview_offset_y = y + 45
-            
-            self.draw_block(preview_block, preview_offset_x, preview_offset_y)
+            self.draw_block(preview_block, x + 65, y + 45)
 
     def draw_powerup_inventory(self, inventory: list, active_effects: list,
-                               x: int = 400, y: int = 410) -> None:
+                               x: int = 380, y: int = 410) -> None:
         """Draw power-up inventory (compact version)."""
-        # Bottom Row
-        panel_width = 360
+        panel_width = 400
         self.draw_panel(x, y, panel_width, 120, "POWER-UPS")
 
-        # Draw inventory slots (spread out)
+        # Draw inventory slots (compact, side by side)
         slot_y = y + 40
-        slot_width = 100
-        # Calculate spacing to center the two slots
-        total_slots_width = (slot_width * 2) + 20
-        start_x = x + (panel_width - total_slots_width) // 2
+        slot_width = 120
         
+        # Center slots in the wider panel
+        # Panel 400. Slots 2 * 120 + gap.
+        total_width = 2 * slot_width + 30
+        start_x = x + (panel_width - total_width) // 2
+
         for i in range(2):
-            slot_x = start_x + i * (slot_width + 20)
+            slot_x = start_x + i * (slot_width + 30)
             slot_rect = pygame.Rect(slot_x, slot_y, slot_width, 50)
             
             self.draw_rounded_rect(self.screen, slot_rect, (245, 245, 255), radius=10)
@@ -274,7 +275,6 @@ class Renderer:
                 powerup = inventory[i]
                 pygame.draw.rect(self.screen, COLOR_BUTTON_NORMAL, slot_rect, 2, border_radius=10)
 
-                # Simplified text labels (no emoji for web compatibility)
                 name_map = {
                     "bomb": "BOMB",
                     "rainbow": "RAIN",
@@ -284,12 +284,14 @@ class Renderer:
                     "ghost_mode": "GHST"
                 }
                 name = name_map.get(powerup.type.value, powerup.type.value[:4].upper())
-                self.draw_text(name, slot_x + 25, slot_y + 15,
+                self.draw_text(name, slot_x + 35, slot_y + 15,
                              self.font_tiny, COLOR_TEXT)
             else:
                 pygame.draw.rect(self.screen, COLOR_LIGHT_GRAY, slot_rect, 1, border_radius=10)
-                self.draw_text("---", slot_x + 35, slot_y + 15,
+                self.draw_text("---", slot_x + 45, slot_y + 15,
                              self.font_tiny, COLOR_LIGHT_GRAY)
+    
+    # Note: Game Over and Pause methods remain unchanged but renderer class continues below
 
     def draw_game_over_screen(self, score: int, lines: int, high_score: int) -> None:
         """Draw game over overlay with prominent popup."""

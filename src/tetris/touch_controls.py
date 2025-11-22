@@ -49,9 +49,8 @@ class TouchControlManager:
         self.window_width = window_width
         self.window_height = window_height
 
-        # Button dimensions - redesigned layout for two-hand usage
-        # Increased sizes by ~10-20%
-        self.button_height = 78  # Base height +10%
+        # Button dimensions
+        self.button_height = 78
         self.button_margin = 12
         
         # Bottom row Y position
@@ -70,10 +69,11 @@ class TouchControlManager:
             hover_color=(150, 150, 150)
         )
 
-        # --- LEFT SIDE BUTTONS (Left Hand) ---
+        # --- BOTTOM ROW BUTTONS ---
         
-        # Hard Drop (Bottom Left - Primary Action) - Increased size
-        drop_width = 190  # +10%
+        # 1. Hard Drop (Bottom Left)
+        # Wide button
+        drop_width = 200
         self.drop_button = TouchButton(
             x=self.button_margin,
             y=bottom_y,
@@ -86,8 +86,9 @@ class TouchControlManager:
             hover_color=(240, 120, 120)
         )
         
-        # Power-up (Left Inner - Secondary Action)
-        pwr_width = 120  # +10%
+        # 2. Power-up (Next to Drop)
+        # Wide button (similar to Drop/Rot)
+        pwr_width = 200
         self.powerup_button = TouchButton(
             x=self.button_margin * 2 + drop_width,
             y=bottom_y,
@@ -100,11 +101,10 @@ class TouchControlManager:
             hover_color=(220, 120, 220)
         )
 
-        # --- RIGHT SIDE BUTTONS (Right Hand) ---
-
-        # Rotate (Bottom Right - Primary Action) - Extra Large (+20%)
-        rot_width = 210  # +20%
-        rot_height = 85  # Slightly taller
+        # 3. Rotate (Bottom Right)
+        # Extra Large
+        rot_width = 210
+        rot_height = 85
         rot_y = window_height - rot_height - self.button_margin
         
         self.rotate_button = TouchButton(
@@ -119,13 +119,22 @@ class TouchControlManager:
             hover_color=(120, 170, 220)
         )
 
-        # Hold (Right Inner - Secondary Action)
-        hold_width = 120 # +10%
+        # --- FLOATING ACTION BUTTON ---
+
+        # 4. Hold (Below Power-up Panel, Right Side)
+        # Placed in the gap between Power-ups panel and bottom buttons
+        # Power-ups panel is at y=410, height=120 -> ends at 530
+        # Bottom buttons start at ~660
+        # Center vertically in that gap ~595
+        hold_width = 300 # Wide button to fill the right area space
+        hold_x = 430 # Aligned with right UI column
+        hold_y = 555
+        
         self.hold_button = TouchButton(
-            x=window_width - rot_width - hold_width - self.button_margin * 2,
-            y=bottom_y,
+            x=hold_x,
+            y=hold_y,
             width=hold_width,
-            height=self.button_height,
+            height=70,
             label="Hold",
             icon="HOLD",
             action="hold",
@@ -150,8 +159,8 @@ class TouchControlManager:
         pause_bottom = self.pause_button.y + self.pause_button.height
         self.game_area_top = pause_bottom + 10 
         
-        # Bottom limit is above the buttons (use higher Y of the buttons)
-        self.game_area_bottom = min(bottom_y, rot_y) - 10
+        # Bottom limit is above the HOLD button (since it's higher up now)
+        self.game_area_bottom = hold_y - 10
         
         # Allow touch in entire screen width; buttons already capture presses with higher priority
         self.game_area_right = window_width
@@ -175,16 +184,14 @@ class TouchControlManager:
                 button.is_pressed = True
                 return button.action
 
-        # Expanded left/right touch zones (entire left and right areas)
-        # Left zone: from left edge to center
-        # Right zone: from center to screen edge (buttons already handled first)
+        # Expanded left/right touch zones
         if y >= self.game_area_top and y <= self.game_area_bottom:
-            # Left zone: entire left half of screen
+            # Left zone
             if x < self.game_area_center:
                 self.left_pressed = True
                 return "move_left"
-            # Right zone: center to right edge (buttons handled before movement)
-            elif x >= self.game_area_center and x <= self.game_area_right:
+            # Right zone
+            elif x >= self.game_area_center:
                 self.right_pressed = True
                 return "move_right"
 
