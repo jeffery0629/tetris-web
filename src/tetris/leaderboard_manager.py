@@ -15,6 +15,13 @@ except ModuleNotFoundError:
 if load_dotenv:
     load_dotenv()
 
+# Try to import web config (for deployed Web version)
+try:
+    from . import web_config
+    WEB_CONFIG_AVAILABLE = True
+except ImportError:
+    WEB_CONFIG_AVAILABLE = False
+
 
 class LeaderboardEntry:
     """Single leaderboard entry."""
@@ -73,8 +80,13 @@ class GistLeaderboardManager:
             gist_id: GitHub Gist ID (from env var if None)
             github_token: GitHub Personal Access Token (from env var if None)
         """
-        self.gist_id = gist_id or os.environ.get('GIST_ID', '')
-        self.github_token = github_token or os.environ.get('GITHUB_TOKEN', '')
+        # Priority: parameter > web_config > environment variable
+        if WEB_CONFIG_AVAILABLE:
+            self.gist_id = gist_id or web_config.GIST_ID
+            self.github_token = github_token or web_config.GITHUB_TOKEN
+        else:
+            self.gist_id = gist_id or os.environ.get('GIST_ID', '')
+            self.github_token = github_token or os.environ.get('GITHUB_TOKEN', '')
         self.filename = 'tetris_leaderboard.json'
         self.api_base = 'https://api.github.com'
 

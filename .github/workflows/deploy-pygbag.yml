@@ -38,10 +38,16 @@ jobs:
         rm -rf build/web-cache
         echo "Cache cleared, forcing full rebuild"
 
+    - name: Create Web config with secrets
+      run: |
+        cat > src/tetris/web_config.py << EOF
+        """Web version configuration (auto-generated during build)."""
+        GIST_ID = "${{ secrets.GIST_ID }}"
+        GITHUB_TOKEN = "${{ secrets.LEADERBOARD_TOKEN }}"
+        EOF
+        echo "Web config created with secrets"
+
     - name: Build with Pygbag
-      env:
-        GIST_ID: ${{ secrets.GIST_ID }}
-        GITHUB_TOKEN: ${{ secrets.LEADERBOARD_TOKEN }}
       run: |
         pygbag --ume_block 0 --build .
 
