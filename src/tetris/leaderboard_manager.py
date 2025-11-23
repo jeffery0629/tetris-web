@@ -5,10 +5,15 @@ import time
 import os
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    load_dotenv = None
+
+# Load environment variables from .env file when available
+if load_dotenv:
+    load_dotenv()
 
 
 class LeaderboardEntry:
