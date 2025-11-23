@@ -39,6 +39,9 @@ jobs:
         echo "Cache cleared, forcing full rebuild"
 
     - name: Build with Pygbag
+      env:
+        GIST_ID: ${{ secrets.GIST_ID }}
+        GITHUB_TOKEN: ${{ secrets.LEADERBOARD_TOKEN }}
       run: |
         pygbag --ume_block 0 --build .
 
