@@ -12,6 +12,8 @@ from .renderer import Renderer
 from .powerup import PowerUpManager, get_random_powerup, PowerUp
 from .modes import GameMode, get_mode_config
 from .touch_controls import TouchControlManager
+from .text_input import TextInput
+from .leaderboard_manager import GistLeaderboardManager, LeaderboardEntry
 from .constants import (
     FPS, INITIAL_FALL_SPEED, LOCK_DELAY,
     SPEED_INCREASE_PER_LEVEL, LINES_PER_LEVEL,
@@ -90,6 +92,15 @@ class GameEnhanced:
 
         # Exit flag for returning to menu
         self.should_exit_to_menu = False
+
+        # Leaderboard system
+        self.leaderboard_manager = GistLeaderboardManager()
+        self.text_input = TextInput(
+            x=300, y=400, width=200, height=40,
+            font=self.renderer.font_small, max_length=12
+        )
+        self.leaderboard_entries = []  # Current leaderboard data
+        self.current_player_id = ""  # Last entered player ID
 
         # Spawn first blocks
         self.spawn_new_block()
@@ -256,11 +267,21 @@ class GameEnhanced:
             new_level = (self.lines_cleared // LINES_PER_LEVEL) + 1
             if new_level > self.level:
                 self.level = new_level
-                self.fall_speed *= SPEED_INCREASE_PER_LEVEL
+                # Progressive speed increase: gentle at low levels, aggressive at high levels
+                if self.level <= 5:
+                    self.fall_speed *= SPEED_INCREASE_PER_LEVEL  # 0.9
+                else:
+                    self.fall_speed *= 0.85  # Faster acceleration after level 5
 
         # Check game over
         if self.board.is_game_over(spawn_y=1):
-            self.state = GameState.GAME_OVER
+            # Show input screen if online, otherwise skip to game over
+            if self.leaderboard_manager.online_mode:
+                self.state = GameState.GAME_OVER_INPUT
+                self.text_input.active = True  # Auto-activate input
+            else:
+                self.state = GameState.GAME_OVER
+
             if self.score > self.high_score:
                 self.high_score = self.score
         else:
@@ -328,6 +349,11 @@ class GameEnhanced:
 
     def update(self, dt: float) -> None:
         """Update game state."""
+        # Update text input cursor animation during input state
+        if self.state == GameState.GAME_OVER_INPUT:
+            self.text_input.update(dt)
+            return
+
         if self.state != GameState.PLAYING:
             return
 
@@ -411,6 +437,28 @@ class GameEnhanced:
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle pygame events (keyboard + touch)."""
+        # Handle text input during game over input state
+        if self.state == GameState.GAME_OVER_INPUT:
+            modified = self.text_input.handle_event(event)
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                # User pressed Enter - submit score
+                player_id = self.text_input.get_text()
+                if player_id:
+                    self._submit_score_to_leaderboard(player_id)
+                else:
+                    # Skip if no ID entered
+                    self.state = GameState.GAME_OVER
+            return  # Don't process other events during input
+
+        # Handle leaderboard screen
+        if self.state == GameState.LEADERBOARD:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                action = self.renderer.get_leaderboard_button_clicked(event.pos)
+                if action == "close":
+                    self.state = GameState.GAME_OVER
+            return
+
         # Handle touch/mouse events
         if self.enable_touch_controls:
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -544,6 +592,23 @@ class GameEnhanced:
         # Draw overlays
         if self.state == GameState.PAUSED:
             self.renderer.draw_pause_screen()
+
+        elif self.state == GameState.GAME_OVER_INPUT:
+            # Draw game over screen first
+            self.renderer.draw_game_over_screen(
+                self.score, self.lines_cleared, self.high_score
+            )
+            # Then draw input overlay on top
+            self._draw_input_overlay()
+
+        elif self.state == GameState.LEADERBOARD:
+            # Show leaderboard
+            self.renderer.draw_leaderboard_screen(
+                mode=self.mode.value,
+                entries=self.leaderboard_entries,
+                player_id=self.current_player_id
+            )
+
         elif self.state == GameState.GAME_OVER:
             self.renderer.draw_game_over_screen(
                 self.score, self.lines_cleared, self.high_score
@@ -564,9 +629,97 @@ class GameEnhanced:
         self.can_hold = True
         self.is_powerup_block = False
         self.powerup_manager.clear()
+
+        # Clear leaderboard state
+        self.text_input.clear()
+        self.leaderboard_entries = []
+        # Keep current_player_id for next game
+
         self.state = GameState.PLAYING
         self.spawn_new_block()
         self.next_block = self.generate_block()
+
+    def _submit_score_to_leaderboard(self, player_id: str) -> None:
+        """Submit score to leaderboard and show rankings.
+
+        Args:
+            player_id: Player's chosen ID
+        """
+        self.current_player_id = player_id
+
+        # Create entry
+        entry = LeaderboardEntry(
+            player_id=player_id,
+            score=self.score,
+            lines=self.lines_cleared,
+            level=self.level,
+            mode=self.mode.value  # "casual", "classic", or "crazy"
+        )
+
+        # Submit to cloud
+        success, message = self.leaderboard_manager.submit_score(entry)
+
+        if success:
+            self.show_notification(message)
+        else:
+            self.show_notification(f"Upload failed: {message}")
+
+        # Fetch and show leaderboard (even if upload failed)
+        self.leaderboard_entries = self.leaderboard_manager.get_leaderboard(
+            mode=self.mode.value,
+            limit=10
+        )
+
+        # Switch to leaderboard view
+        self.state = GameState.LEADERBOARD
+
+    def _draw_input_overlay(self) -> None:
+        """Draw player ID input overlay on top of game over screen."""
+        # Small overlay panel
+        panel_width = 400
+        panel_height = 200
+        panel_x = (800 - panel_width) // 2  # WINDOW_WIDTH = 800
+        panel_y = 250
+
+        # Semi-transparent background
+        overlay = pygame.Surface((panel_width, panel_height))
+        overlay.set_alpha(240)
+        overlay.fill((255, 255, 255))
+        self.renderer.screen.blit(overlay, (panel_x, panel_y))
+
+        # Border
+        pygame.draw.rect(
+            self.renderer.screen,
+            (100, 100, 100),
+            pygame.Rect(panel_x, panel_y, panel_width, panel_height),
+            3,
+            border_radius=15
+        )
+
+        # Prompt text
+        self.renderer.draw_text(
+            "Enter Your Player ID:",
+            panel_x + panel_width // 2,
+            panel_y + 40,
+            self.renderer.font_small,
+            (80, 70, 90),
+            center=True
+        )
+
+        # Text input box
+        self.text_input.rect.centerx = panel_x + panel_width // 2
+        self.text_input.rect.y = panel_y + 80
+        self.text_input.draw(self.renderer.screen, placeholder="Your Name")
+
+        # Hint text
+        self.renderer.draw_text(
+            "Press ENTER to submit",
+            panel_x + panel_width // 2,
+            panel_y + 150,
+            self.renderer.font_small,
+            (150, 150, 150),
+            center=True
+        )
 
     def run(self) -> None:
         """Main game loop (synchronous version for desktop)."""

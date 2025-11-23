@@ -35,8 +35,19 @@ src/tetris/
 ├── renderer.py       # Pygame rendering
 ├── effects.py        # Visual effects
 ├── save_manager.py   # JSON save/load
+├── leaderboard_manager.py  # GitHub Gist leaderboard
+├── text_input.py     # Player ID input widget
+├── touch_controls.py # Mobile touch controls
 ├── constants.py      # Game constants
 └── utils.py          # Helper functions
+
+docs/
+├── HOW_TO_PLAY.md           # Game rules
+├── product_spec.md          # Product specification
+├── PROGRESS.md              # Development history
+├── LEADERBOARD_SETUP.md     # Leaderboard setup guide
+├── SETUP_CHECKLIST.md       # Quick setup checklist
+└── INTEGRATION_EXAMPLE.py   # Code integration example
 ```
 
 ### Testing Requirements

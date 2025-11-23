@@ -105,6 +105,8 @@ class GameState(Enum):
     PLAYING = "playing"
     PAUSED = "paused"
     GAME_OVER = "game_over"
+    GAME_OVER_INPUT = "game_over_input"  # Waiting for player ID input
+    LEADERBOARD = "leaderboard"  # Showing leaderboard
     MODE_UNLOCKED = "mode_unlocked"
 
 

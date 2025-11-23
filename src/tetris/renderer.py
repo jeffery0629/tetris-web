@@ -438,6 +438,104 @@ class Renderer:
         
         self.screen.blit(text_surface, (bubble_x + 20, y - bubble_height//2 + 15))
 
+    def draw_leaderboard_screen(self, mode: str, entries: list, player_id: str = None) -> None:
+        """Draw leaderboard overlay with rankings.
+
+        Args:
+            mode: Game mode name
+            entries: List of LeaderboardEntry objects
+            player_id: Current player's ID to highlight
+        """
+        # Dark overlay
+        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay.set_alpha(220)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # Modal box
+        box_width, box_height = 600, 550
+        box_x = (WINDOW_WIDTH - box_width) // 2
+        box_y = (WINDOW_HEIGHT - box_height) // 2
+
+        # Shadow
+        shadow_rect = pygame.Rect(box_x + 6, box_y + 6, box_width, box_height)
+        self.draw_rounded_rect(self.screen, shadow_rect, (0, 0, 0), radius=20)
+
+        # Main panel
+        self.draw_panel(box_x, box_y, box_width, box_height)
+
+        # Title
+        mode_name = mode.upper()
+        self.draw_text(f"{mode_name} LEADERBOARD", WINDOW_WIDTH // 2, box_y + 40,
+                      self.font_medium, COLOR_TEXT, center=True, shadow=True)
+
+        # Headers
+        header_y = box_y + 90
+        self.draw_text("RANK", box_x + 50, header_y, self.font_small, COLOR_DARK_GRAY)
+        self.draw_text("PLAYER", box_x + 150, header_y, self.font_small, COLOR_DARK_GRAY)
+        self.draw_text("SCORE", box_x + 350, header_y, self.font_small, COLOR_DARK_GRAY)
+        self.draw_text("LINES", box_x + 480, header_y, self.font_small, COLOR_DARK_GRAY)
+
+        # Entries (max 10)
+        entry_y = header_y + 40
+        row_height = 35
+
+        if not entries:
+            self.draw_text("No scores yet!", WINDOW_WIDTH // 2, entry_y + 50,
+                          self.font_small, (150, 150, 150), center=True)
+        else:
+            for i, entry in enumerate(entries[:10]):
+                rank = i + 1
+                y = entry_y + i * row_height
+
+                # Highlight current player
+                is_current = (player_id and entry.player_id == player_id)
+                text_color = (255, 150, 0) if is_current else COLOR_TEXT
+
+                # Background for highlighted row
+                if is_current:
+                    highlight_rect = pygame.Rect(box_x + 20, y - 5, box_width - 40, row_height - 5)
+                    pygame.draw.rect(self.screen, (255, 245, 220), highlight_rect, border_radius=8)
+
+                # Rank with medal for top 3
+                rank_str = str(rank)
+                if rank == 1:
+                    rank_str = "1ST"
+                    rank_color = (255, 215, 0)  # Gold
+                elif rank == 2:
+                    rank_str = "2ND"
+                    rank_color = (192, 192, 192)  # Silver
+                elif rank == 3:
+                    rank_str = "3RD"
+                    rank_color = (205, 127, 50)  # Bronze
+                else:
+                    rank_color = text_color
+
+                self.draw_text(rank_str, box_x + 50, y, self.font_small, rank_color)
+                self.draw_text(entry.player_id[:10], box_x + 150, y, self.font_small, text_color)
+                self.draw_text(str(entry.score), box_x + 350, y, self.font_small, text_color)
+                self.draw_text(str(entry.lines), box_x + 480, y, self.font_small, text_color)
+
+        # Close button
+        button_y = box_y + box_height - 80
+        close_rect = pygame.Rect(WINDOW_WIDTH // 2 - 100, button_y, 200, 50)
+        pygame.draw.rect(self.screen, COLOR_BUTTON_NORMAL, close_rect, border_radius=10)
+        pygame.draw.rect(self.screen, COLOR_TEXT, close_rect, 2, border_radius=10)
+        self.draw_text("CLOSE", close_rect.centerx, close_rect.centery,
+                      self.font_small, COLOR_TEXT, center=True)
+
+    def get_leaderboard_button_clicked(self, mouse_pos: tuple) -> Optional[str]:
+        """Check if leaderboard close button was clicked."""
+        box_width, box_height = 600, 550
+        box_x = (WINDOW_WIDTH - box_width) // 2
+        box_y = (WINDOW_HEIGHT - box_height) // 2
+        button_y = box_y + box_height - 80
+
+        close_rect = pygame.Rect(WINDOW_WIDTH // 2 - 100, button_y, 200, 50)
+        if close_rect.collidepoint(mouse_pos):
+            return "close"
+        return None
+
     def draw_pause_screen(self) -> None:
         """Draw pause overlay."""
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
