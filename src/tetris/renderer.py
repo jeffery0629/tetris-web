@@ -24,6 +24,9 @@ class Renderer:
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption("Claire's Tetris 💖")
 
+        # Dynamic cell size (can be adjusted for different board sizes)
+        self.cell_size = CELL_SIZE
+
         # Try to load cute fonts, fallback to default
         # Priority: Arial Rounded MT Bold (common cute font), Comic Sans MS (actually good for cute UI), Microsoft JhengHei
         self.font_name = pygame.font.match_font('arialroundedmtbold') 
@@ -65,25 +68,25 @@ class Renderer:
     def draw_cell(self, x: int, y: int, color: Tuple[int, int, int],
                   offset_x: int = 0, offset_y: int = 0, alpha: int = 255) -> None:
         """Draw a single cell (block) with classic Tetris style."""
+        cs = self.cell_size  # Use dynamic cell size
 
         # Pixel coordinates
-        px = offset_x + x * CELL_SIZE
-        py = offset_y + y * CELL_SIZE
+        px = offset_x + x * cs
+        py = offset_y + y * cs
 
         # Main block body
-        rect = pygame.Rect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2)
+        rect = pygame.Rect(px + 1, py + 1, cs - 2, cs - 2)
 
         if alpha < 255:
             # Ghost piece with semi-transparent fill (updated style)
-            # Use a lighter alpha for the fill to look "glassy"
-            ghost_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            
+            ghost_surface = pygame.Surface((cs, cs), pygame.SRCALPHA)
+
             # Fill with low opacity (e.g., 60)
-            pygame.draw.rect(ghost_surface, (*color, 60), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2), border_radius=4)
-            
+            pygame.draw.rect(ghost_surface, (*color, 60), (1, 1, cs - 2, cs - 2), border_radius=4)
+
             # Outline with slightly higher opacity
-            pygame.draw.rect(ghost_surface, (*color, 120), (1, 1, CELL_SIZE - 2, CELL_SIZE - 2), 2, border_radius=4)
-            
+            pygame.draw.rect(ghost_surface, (*color, 120), (1, 1, cs - 2, cs - 2), 2, border_radius=4)
+
             self.screen.blit(ghost_surface, (px, py))
         else:
             # Solid block with "Macaron" style (softer, less harsh 3D)
@@ -93,41 +96,42 @@ class Renderer:
             # Subtle highlight (top-left)
             highlight = (min(255, color[0] + 40), min(255, color[1] + 40), min(255, color[2] + 40))
             # Draw a soft rounded highlight instead of harsh lines
-            pygame.draw.line(self.screen, highlight, (px + 4, py + 4), (px + CELL_SIZE - 6, py + 4), 2)
-            pygame.draw.line(self.screen, highlight, (px + 4, py + 4), (px + 4, py + CELL_SIZE - 6), 2)
+            pygame.draw.line(self.screen, highlight, (px + 4, py + 4), (px + cs - 6, py + 4), 2)
+            pygame.draw.line(self.screen, highlight, (px + 4, py + 4), (px + 4, py + cs - 6), 2)
 
             # Subtle shadow (bottom-right) - reduced intensity
             shadow = (max(0, color[0] - 30), max(0, color[1] - 30), max(0, color[2] - 30))
-            pygame.draw.line(self.screen, shadow, (px + 4, py + CELL_SIZE - 4), (px + CELL_SIZE - 4, py + CELL_SIZE - 4), 2)
-            pygame.draw.line(self.screen, shadow, (px + CELL_SIZE - 4, py + 4), (px + CELL_SIZE - 4, py + CELL_SIZE - 4), 2)
+            pygame.draw.line(self.screen, shadow, (px + 4, py + cs - 4), (px + cs - 4, py + cs - 4), 2)
+            pygame.draw.line(self.screen, shadow, (px + cs - 4, py + 4), (px + cs - 4, py + cs - 4), 2)
 
             # No black border for softer look
-            # pygame.draw.rect(self.screen, (0, 0, 0), (px, py, CELL_SIZE, CELL_SIZE), 1)
+            # pygame.draw.rect(self.screen, (0, 0, 0), (px, py, cs, cs), 1)
 
     def draw_board(self, board: Board, offset_x: int = 50, offset_y: int = 50) -> None:
         """Draw the game board grid and placed blocks."""
-        
+        cs = self.cell_size  # Use dynamic cell size
+
         # Draw Board Background (Container)
         board_rect = pygame.Rect(
-            offset_x - 5, 
-            offset_y - 5, 
-            board.width * CELL_SIZE + 10, 
-            board.height * CELL_SIZE + 10
+            offset_x - 5,
+            offset_y - 5,
+            board.width * cs + 10,
+            board.height * cs + 10
         )
-        
+
         # Semi-transparent white background for board
         board_bg = pygame.Surface((board_rect.width, board_rect.height), pygame.SRCALPHA)
         pygame.draw.rect(board_bg, (255, 255, 255, 180), board_bg.get_rect(), border_radius=10)
         self.screen.blit(board_bg, board_rect)
-        
+
         # Draw glowing/soft border
         self.draw_rounded_rect(self.screen, board_rect, COLOR_GRID_LINE, radius=10, width=2)
 
         # Draw grid dots instead of lines for cleaner look
         for y in range(board.height + 1):
             for x in range(board.width + 1):
-                pos_x = offset_x + x * CELL_SIZE
-                pos_y = offset_y + y * CELL_SIZE
+                pos_x = offset_x + x * cs
+                pos_y = offset_y + y * cs
                 pygame.draw.circle(self.screen, COLOR_GRID_LINE, (pos_x, pos_y), 1)
 
         # Draw placed blocks
@@ -140,6 +144,7 @@ class Renderer:
     def draw_block(self, block: Block, offset_x: int = 50, offset_y: int = 50,
                    alpha: int = 255, is_powerup: bool = False) -> None:
         """Draw a falling block."""
+        cs = self.cell_size
         cells = block.get_cells()
         for x, y in cells:
             if y >= 0:  # Only draw visible cells
@@ -147,9 +152,9 @@ class Renderer:
 
                 # Draw star/icon indicator for power-up blocks
                 if is_powerup:
-                    cell_x = offset_x + x * CELL_SIZE + CELL_SIZE // 2
-                    cell_y = offset_y + y * CELL_SIZE + CELL_SIZE // 2
-                    
+                    cell_x = offset_x + x * cs + cs // 2
+                    cell_y = offset_y + y * cs + cs // 2
+
                     # Draw a cute heart or star
                     pygame.draw.circle(self.screen, (255, 255, 255), (cell_x, cell_y), 8)
                     pygame.draw.circle(self.screen, COLOR_YELLOW, (cell_x, cell_y), 5)
@@ -159,12 +164,10 @@ class Renderer:
         """Draw ghost piece."""
         ghost = block.copy()
         ghost.y = board.get_drop_position(block)
-        
+
         cells = ghost.get_cells()
         for x, y in cells:
             if y >= 0:
-                px = offset_x + x * CELL_SIZE
-                py = offset_y + y * CELL_SIZE
                 # Ghost rendering logic is now handled inside draw_cell with alpha < 255
                 self.draw_cell(x, y, ghost.color, offset_x, offset_y, alpha=100)
 
@@ -213,14 +216,15 @@ class Renderer:
             self.draw_text(title, x + 15, y + 10, self.font_tiny, COLOR_TEXT, shadow=True)
 
     def draw_ui(self, score: int, level: int, lines: int, high_score: int = 0,
-                mode: str = "Classic") -> None:
-        """Draw UI elements."""
-        # UI Layout Base X
-        # Move panels to the left slightly to accommodate larger board
-        # Board takes up ~340px width (offset 40 + 300)
-        # So we can start UI around 380
-        ui_x = 380
-        panel_width = 400  # Increased panel width to fill right space
+                mode: str = "Classic", board_end_x: int = 380) -> None:
+        """Draw UI elements.
+
+        Args:
+            board_end_x: X position where the board ends (for dynamic layout)
+        """
+        # UI Layout Base X - dynamically position based on board size
+        ui_x = board_end_x + 10  # 10px gap after board
+        panel_width = WINDOW_WIDTH - ui_x - 10  # Fill remaining space
         
         # Title with cat icon
         self.draw_text("CLAIRE'S TETRIS", WINDOW_WIDTH // 2 - 30, 30,
@@ -251,8 +255,12 @@ class Renderer:
         # High Score at bottom
         self.draw_text(f"High Score: {high_score}", ui_x + 20, start_y + gap*2 + 10, self.font_tiny, COLOR_GRAY)
 
-    def draw_next_block(self, block: Optional[Block], x: int = 380, y: int = 70) -> None:
+    def draw_next_block(self, block: Optional[Block], x: int = None, y: int = 70,
+                        board_end_x: int = 380) -> None:
         """Draw next block preview."""
+        # Calculate x position if not provided
+        if x is None:
+            x = board_end_x + 10
         # Top Right - Left side
         self.draw_panel(x, y, 190, 120, "NEXT")
 
@@ -267,8 +275,12 @@ class Renderer:
             
             self.draw_block(preview_block, preview_offset_x, preview_offset_y)
 
-    def draw_hold_block(self, block: Optional[Block], x: int = 590, y: int = 70) -> None:
+    def draw_hold_block(self, block: Optional[Block], x: int = None, y: int = 70,
+                        board_end_x: int = 380) -> None:
         """Draw held block."""
+        # Calculate x position if not provided (next to NEXT panel)
+        if x is None:
+            x = board_end_x + 210  # 10px gap + 190px NEXT panel + 10px gap
         # Top Right - Right side
         self.draw_panel(x, y, 190, 120, "HOLD")
 
@@ -281,9 +293,13 @@ class Renderer:
             self.draw_block(preview_block, x + 65, y + 45)
 
     def draw_powerup_inventory(self, inventory: list, active_effects: list,
-                               x: int = 380, y: int = 410) -> None:
+                               x: int = None, y: int = 410,
+                               board_end_x: int = 380) -> None:
         """Draw power-up inventory (compact version)."""
-        panel_width = 400
+        # Calculate x position if not provided
+        if x is None:
+            x = board_end_x + 10
+        panel_width = WINDOW_WIDTH - x - 10  # Dynamic width based on available space
         panel_height = 140  # Increased from 120 to 140
         self.draw_panel(x, y, panel_width, panel_height, "POWER-UPS")
 

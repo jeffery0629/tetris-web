@@ -2,6 +2,7 @@
 
 import sys
 import asyncio
+import pygame
 from .menu import ModeSelectionMenu
 from .game import GameEnhanced
 from .save_manager import SaveManager
@@ -29,6 +30,8 @@ async def main():
             battle_game = BattleGame()
             battle_game.run()
             # Battle mode doesn't save scores
+            # Reinitialize pygame after battle (window size may have changed)
+            pygame.quit()
             continue
 
         # Run game with selected mode

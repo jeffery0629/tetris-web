@@ -440,3 +440,96 @@ result_str = window.eval(js_code)
 - ✅ Token not exposed in browser DevTools
 - ✅ Anti-cheat rejects invalid scores
 - ✅ Desktop version works with `.env` config
+
+---
+
+## Battle Mode (Phase 9) - COMPLETED ✅
+
+### Overview
+2-player local multiplayer mode with garbage line mechanics and 10-minute timer.
+
+### Game Rules
+- **Players**: 2 (Player 1 on left, Player 2 on right)
+- **Timer**: 10 minutes countdown
+- **Win Condition**: Opponent tops out OR higher score when timer ends
+- **Grid**: 10×20 (Classic Tetris standard)
+
+### Garbage Line Mechanics
+- Clearing 2+ lines sends garbage to opponent
+- Garbage lines appear at bottom with one random gap
+- Sent lines: `lines_cleared - 1` (2 lines = 1 garbage, 4 lines = 3 garbage)
+
+### Controls
+| Action | Player 1 | Player 2 |
+|--------|----------|----------|
+| Move Left | A | ← |
+| Move Right | D | → |
+| Soft Drop | S | ↓ |
+| Hard Drop | W | ↑ |
+| Rotate CW | E | / |
+| Rotate CCW | Q | . |
+| Hold | Tab | Shift |
+| Power-up | Space | Enter |
+
+### Implementation Details
+- **Window Size**: 1000×750 (wider for two boards)
+- **File**: `src/tetris/battle_game.py`
+- **Entry Point**: Selected from mode menu, handled in `main.py`
+
+### Bug Fixes
+
+#### Fix 1: Collision Detection Method Name
+- **Problem**: `AttributeError: 'Board' object has no attribute 'check_collision'`
+- **Root Cause**: Battle mode used `check_collision()` but Board class uses `is_valid_position()`
+- **Solution**: Replaced all `check_collision()` calls with `is_valid_position()` and inverted logic
+  - `check_collision()` returns True when collision exists
+  - `is_valid_position()` returns True when NO collision (valid move)
+
+---
+
+## Dynamic UI Layout Fix - COMPLETED ✅
+
+### Problem
+Crazy Mode (12×22 grid) caused UI overlap with game board on desktop/web version.
+
+### Solution: Dynamic Cell Size & Panel Positioning
+
+#### 1. Dynamic Cell Size (`renderer.py`)
+```python
+# Calculate based on board height
+max_board_height = WINDOW_HEIGHT - 130  # Leave space for title/buttons
+ideal_cell_size = max_board_height // board.height
+cell_size = min(30, max(24, ideal_cell_size))
+```
+- Simple Mode (8×16): Uses 30px cells
+- Classic Mode (10×20): Uses 30px cells
+- Crazy Mode (12×22): Uses ~28px cells
+
+#### 2. Dynamic Panel Positioning (`game.py` + `renderer.py`)
+```python
+# Calculate where board ends
+board_end_x = offset_x + board.width * cell_size + 10
+
+# Position UI panels relative to board end
+def draw_ui(self, ..., board_end_x: int = 380):
+    ui_x = board_end_x + 10  # 10px gap after board
+```
+
+#### 3. Reduced Touch Button Sizes (`touch_controls.py`)
+```python
+# Before → After
+button_height = 78 → 55
+button_margin = 12 → 8
+button_gap = 12 → 8
+hold_height = 70 → 50
+```
+
+### Files Modified
+- `src/tetris/renderer.py` - Added `cell_size` property, dynamic positioning
+- `src/tetris/game.py` - Calculate `board_end_x` based on actual board width
+- `src/tetris/touch_controls.py` - Reduced button dimensions
+
+### Result
+- All 3 modes now display correctly without overlap
+- UI panels always positioned to the right of the game board
+- Touch buttons fit better on mobile screens

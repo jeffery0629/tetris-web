@@ -49,11 +49,11 @@ class TouchControlManager:
         self.window_width = window_width
         self.window_height = window_height
 
-        # Button dimensions
-        self.button_height = 78
-        self.button_margin = 12
-        self.button_gap = 12
-        
+        # Button dimensions (reduced for better fit)
+        self.button_height = 55
+        self.button_margin = 8
+        self.button_gap = 8
+
         # Bottom row Y position
         bottom_y = window_height - self.button_height - self.button_margin
 
@@ -126,20 +126,17 @@ class TouchControlManager:
         # --- FLOATING ACTION BUTTON ---
 
         # 4. Hold (Below Power-up Panel, Right Side)
-        # Placed in the gap between Power-ups panel and bottom buttons
-        # Power-ups panel ends at y=550 (410 + 140)
-        # Bottom buttons start at ~660
-        # Gap is ~110px
-        # Center vertically in that gap ~605
-        hold_width = 300 # Wide button to fill the right area space
-        hold_x = 430 # Aligned with right UI column
-        hold_y = 580
-        
+        # Positioned dynamically based on bottom button row
+        hold_width = 260
+        hold_height = 50
+        hold_x = 430
+        hold_y = bottom_y - hold_height - 10  # 10px above bottom buttons
+
         self.hold_button = TouchButton(
             x=hold_x,
             y=hold_y,
             width=hold_width,
-            height=70,
+            height=hold_height,
             label="Hold",
             icon="HOLD",
             action="hold",

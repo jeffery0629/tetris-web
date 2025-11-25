@@ -127,12 +127,16 @@ class BattlePlayer:
 class BattleGame:
     """Battle mode game controller for 2-player local multiplayer."""
 
+    # Battle mode needs a wider window for split screen
+    BATTLE_WINDOW_WIDTH = 1000
+    BATTLE_WINDOW_HEIGHT = 750
+
     def __init__(self):
         """Initialize battle game."""
         pygame.init()
 
         # Create window (wider for split screen)
-        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.screen = pygame.display.set_mode((self.BATTLE_WINDOW_WIDTH, self.BATTLE_WINDOW_HEIGHT))
         pygame.display.set_caption("Claire's Tetris - BATTLE MODE")
 
         self.clock = pygame.time.Clock()
@@ -186,8 +190,8 @@ class BattleGame:
         player.current_block.x = (player.board.width - len(player.current_block.shape[0])) // 2
         player.current_block.y = 0
 
-        # Check if spawn position is valid
-        if player.board.check_collision(player.current_block):
+        # Check if spawn position is valid (is_valid_position returns True if OK)
+        if not player.board.is_valid_position(player.current_block):
             player.is_dead = True
             return False
 
@@ -265,7 +269,7 @@ class BattleGame:
         player.current_block.x += dx
         player.current_block.y += dy
 
-        if player.board.check_collision(player.current_block):
+        if not player.board.is_valid_position(player.current_block):
             player.current_block.x -= dx
             player.current_block.y -= dy
             return False
@@ -297,7 +301,7 @@ class BattleGame:
             player.current_block.x += kick_x
             player.current_block.y += kick_y
 
-            if not player.board.check_collision(player.current_block):
+            if player.board.is_valid_position(player.current_block):
                 player.lock_timer = 0
                 return True
 
@@ -314,11 +318,12 @@ class BattleGame:
             return
 
         drop_distance = 0
-        while not player.board.check_collision(player.current_block):
+        while player.board.is_valid_position(player.current_block):
             player.current_block.y += 1
             drop_distance += 1
 
         player.current_block.y -= 1
+        drop_distance -= 1  # Subtract 1 since last move was invalid
         player.score += drop_distance * SCORE_HARD_DROP
 
         self._lock_block(player, opponent)
@@ -510,14 +515,14 @@ class BattleGame:
         # Calculate layout
         board_width = BATTLE_GRID[0] * CELL_SIZE
         board_height = BATTLE_GRID[1] * CELL_SIZE
-        side_panel_width = 80
+        side_panel_width = 100
 
-        # Player 1 (left side)
+        # Player 1 (left side) - board + side panel
         p1_board_x = 50
         p1_board_y = 100
 
-        # Player 2 (right side)
-        p2_board_x = WINDOW_WIDTH - 50 - board_width
+        # Player 2 (right side) - leave space for side panel on left
+        p2_board_x = self.BATTLE_WINDOW_WIDTH - 50 - board_width - side_panel_width
         p2_board_y = 100
 
         # Draw timer at top center
@@ -542,12 +547,12 @@ class BattleGame:
         timer_text = f"{minutes:02d}:{seconds:02d}"
 
         text_surface = self.font_large.render(timer_text, True, COLOR_TEXT)
-        text_rect = text_surface.get_rect(center=(WINDOW_WIDTH // 2, 40))
+        text_rect = text_surface.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, 40))
         self.screen.blit(text_surface, text_rect)
 
         # Battle mode title
         title = self.font_medium.render("BATTLE MODE", True, COLOR_RED)
-        title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 75))
+        title_rect = title.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, 75))
         self.screen.blit(title, title_rect)
 
     def _draw_player(self, player: BattlePlayer, board_x: int, board_y: int,
@@ -659,7 +664,7 @@ class BattleGame:
 
     def _draw_game_over(self) -> None:
         """Draw game over overlay."""
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay = pygame.Surface((self.BATTLE_WINDOW_WIDTH, self.BATTLE_WINDOW_HEIGHT))
         overlay.fill((0, 0, 0))
         overlay.set_alpha(180)
         self.screen.blit(overlay, (0, 0))
@@ -676,33 +681,33 @@ class BattleGame:
             color = COLOR_YELLOW
 
         text = self.font_large.render(winner_text, True, color)
-        text_rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 50))
+        text_rect = text.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, self.BATTLE_WINDOW_HEIGHT // 2 - 50))
         self.screen.blit(text, text_rect)
 
         # Final scores
         score_text = f"P1: {self.player1.score}  vs  P2: {self.player2.score}"
         score_surface = self.font_medium.render(score_text, True, COLOR_WHITE)
-        score_rect = score_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 20))
+        score_rect = score_surface.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, self.BATTLE_WINDOW_HEIGHT // 2 + 20))
         self.screen.blit(score_surface, score_rect)
 
         # Restart hint
         hint = self.font_small.render("Press R to restart, ESC to quit", True, COLOR_GRAY)
-        hint_rect = hint.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 80))
+        hint_rect = hint.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, self.BATTLE_WINDOW_HEIGHT // 2 + 80))
         self.screen.blit(hint, hint_rect)
 
     def _draw_paused(self) -> None:
         """Draw pause overlay."""
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay = pygame.Surface((self.BATTLE_WINDOW_WIDTH, self.BATTLE_WINDOW_HEIGHT))
         overlay.fill((0, 0, 0))
         overlay.set_alpha(150)
         self.screen.blit(overlay, (0, 0))
 
         text = self.font_large.render("PAUSED", True, COLOR_WHITE)
-        text_rect = text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+        text_rect = text.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, self.BATTLE_WINDOW_HEIGHT // 2))
         self.screen.blit(text, text_rect)
 
         hint = self.font_small.render("Press ESC to resume", True, COLOR_GRAY)
-        hint_rect = hint.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 50))
+        hint_rect = hint.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, self.BATTLE_WINDOW_HEIGHT // 2 + 50))
         self.screen.blit(hint, hint_rect)
 
     def run(self) -> None:

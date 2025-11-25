@@ -621,9 +621,21 @@ class GameEnhanced:
         """Render current game state."""
         self.renderer.clear_screen()
 
-        # Adjusted offsets for larger board (CELL_SIZE=30)
+        # Calculate dynamic cell size based on board height
+        # Maximum board height that fits: (750 - 50 offset - 80 button area) / cell_size
+        # For Crazy mode (22 rows): need smaller cells
+        from .constants import CELL_SIZE, WINDOW_HEIGHT
+        max_board_height = WINDOW_HEIGHT - 130  # Leave space for title and buttons
+        ideal_cell_size = max_board_height // self.board.height
+        # Clamp between 24 and 30
+        self.renderer.cell_size = min(30, max(24, ideal_cell_size))
+
+        # Adjusted offsets for larger board
         offset_x = 40
         offset_y = 50
+
+        # Calculate board end position for dynamic UI layout
+        board_end_x = offset_x + self.board.width * self.renderer.cell_size + 10  # 10px padding
 
         # Draw board and blocks
         self.renderer.draw_board(self.board, offset_x, offset_y)
@@ -632,24 +644,26 @@ class GameEnhanced:
             self.renderer.draw_ghost_piece(self.current_block, self.board, offset_x, offset_y)
             self.renderer.draw_block(self.current_block, offset_x, offset_y, is_powerup=self.is_powerup_block)
 
-        # Draw UI
+        # Draw UI with dynamic positioning based on board size
         self.renderer.draw_ui(
             score=self.score,
             level=self.level,
             lines=self.lines_cleared,
             high_score=self.high_score,
-            mode=self.mode_config.display_name
+            mode=self.mode_config.display_name,
+            board_end_x=board_end_x
         )
 
-        # Draw next and hold blocks
-        self.renderer.draw_next_block(self.next_block)
-        self.renderer.draw_hold_block(self.held_block)
+        # Draw next and hold blocks with dynamic positioning
+        self.renderer.draw_next_block(self.next_block, board_end_x=board_end_x)
+        self.renderer.draw_hold_block(self.held_block, board_end_x=board_end_x)
 
         # Draw power-up inventory and active effects
         if self.mode_config.power_ups_enabled:
             self.renderer.draw_powerup_inventory(
                 inventory=self.powerup_manager.inventory,
-                active_effects=self.powerup_manager.active_effects
+                active_effects=self.powerup_manager.active_effects,
+                board_end_x=board_end_x
             )
 
         # Draw notification if active
