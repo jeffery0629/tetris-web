@@ -186,9 +186,12 @@ class BattleGame:
 
         player.next_block = get_random_tetromino()
 
-        # Center the block
-        player.current_block.x = (player.board.width - len(player.current_block.shape[0])) // 2
+        # Center the block - use current rotation's shape to get actual width
+        current_shape = player.current_block.shape[player.current_block.rotation]
+        block_width = len(current_shape[0]) if current_shape else 0
+        player.current_block.x = (player.board.width - block_width) // 2
         player.current_block.y = 0
+        player.current_block.rotation = 0  # Reset rotation for new block
 
         # Check if spawn position is valid (is_valid_position returns True if OK)
         if not player.board.is_valid_position(player.current_block):
@@ -274,6 +277,16 @@ class BattleGame:
             player.current_block.y -= dy
             return False
 
+        # After horizontal move, re-check if block is still on ground
+        if dx != 0:
+            # Check if there's space below
+            player.current_block.y += 1
+            if player.board.is_valid_position(player.current_block):
+                # Not on ground anymore - reset lock timer and ground state
+                player.is_on_ground = False
+                player.lock_timer = 0
+            player.current_block.y -= 1
+
         if dy > 0:
             player.lock_timer = 0
 
@@ -284,32 +297,32 @@ class BattleGame:
         if not player.current_block:
             return False
 
-        original_shape = [row[:] for row in player.current_block.shape]
+        # Save original rotation state
+        original_rotation = player.current_block.rotation
+        original_x = player.current_block.x
+        original_y = player.current_block.y
 
-        # Rotate
+        # Rotate using Block API (modifies rotation index, not shape)
         if clockwise:
-            player.current_block.shape = list(zip(*player.current_block.shape[::-1]))
+            player.current_block.rotate_cw()
         else:
-            player.current_block.shape = list(zip(*player.current_block.shape))[::-1]
-
-        player.current_block.shape = [list(row) for row in player.current_block.shape]
+            player.current_block.rotate_ccw()
 
         # Wall kick offsets
         kicks = [(0, 0), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1), (0, -2)]
 
         for kick_x, kick_y in kicks:
-            player.current_block.x += kick_x
-            player.current_block.y += kick_y
+            player.current_block.x = original_x + kick_x
+            player.current_block.y = original_y + kick_y
 
             if player.board.is_valid_position(player.current_block):
                 player.lock_timer = 0
                 return True
 
-            player.current_block.x -= kick_x
-            player.current_block.y -= kick_y
-
-        # Restore original shape if all kicks fail
-        player.current_block.shape = original_shape
+        # Restore original state if all kicks fail
+        player.current_block.rotation = original_rotation
+        player.current_block.x = original_x
+        player.current_block.y = original_y
         return False
 
     def _hard_drop(self, player: BattlePlayer, opponent: BattlePlayer) -> None:
@@ -336,12 +349,19 @@ class BattleGame:
         if player.hold_block:
             # Swap
             player.current_block, player.hold_block = player.hold_block, player.current_block
-            player.current_block.x = (player.board.width - len(player.current_block.shape[0])) // 2
-            player.current_block.y = 0
+            # Reset and center the swapped-in block
             player.current_block.rotation = 0
+            current_shape = player.current_block.shape[0]  # Use rotation 0
+            block_width = len(current_shape[0]) if current_shape else 0
+            player.current_block.x = (player.board.width - block_width) // 2
+            player.current_block.y = 0
         else:
             player.hold_block = player.current_block
             self._spawn_block(player)
+
+        # Reset hold block's rotation for display
+        if player.hold_block:
+            player.hold_block.rotation = 0
 
         player.can_hold = False
 
@@ -587,22 +607,22 @@ class BattleGame:
                     pygame.draw.rect(self.screen, cell,
                                     (cell_x + 1, cell_y + 1, CELL_SIZE - 2, CELL_SIZE - 2))
 
-        # Draw current block
+        # Draw current block using get_cells() for correct rotation handling
         if player.current_block and not player.is_dead:
-            for y, row in enumerate(player.current_block.shape):
-                for x, cell in enumerate(row):
-                    if cell:
-                        cell_x = board_x + (player.current_block.x + x) * CELL_SIZE
-                        cell_y = board_y + (player.current_block.y + y) * CELL_SIZE
-                        pygame.draw.rect(self.screen, player.current_block.color,
-                                        (cell_x + 1, cell_y + 1, CELL_SIZE - 2, CELL_SIZE - 2))
+            for cell_x, cell_y in player.current_block.get_cells():
+                if cell_y >= 0:  # Only draw visible cells
+                    draw_x = board_x + cell_x * CELL_SIZE
+                    draw_y = board_y + cell_y * CELL_SIZE
+                    pygame.draw.rect(self.screen, player.current_block.color,
+                                    (draw_x + 1, draw_y + 1, CELL_SIZE - 2, CELL_SIZE - 2))
 
-        # Draw ink overlay (covers bottom half)
+        # Draw ink overlay (covers bottom 2/3 of the board - more opaque black)
         if player.is_ink_active():
-            ink_surface = pygame.Surface((board_width, board_height // 2))
-            ink_surface.fill((20, 20, 30))
-            ink_surface.set_alpha(220)
-            self.screen.blit(ink_surface, (board_x, board_y + board_height // 2))
+            ink_height = int(board_height * 0.67)  # Cover 2/3 of the board
+            ink_surface = pygame.Surface((board_width, ink_height))
+            ink_surface.fill((5, 5, 10))  # Very dark black
+            ink_surface.set_alpha(245)  # Almost fully opaque
+            self.screen.blit(ink_surface, (board_x, board_y + board_height - ink_height))
 
         # Draw next block (or fog)
         next_x = board_x + board_width + 10
@@ -655,7 +675,9 @@ class BattleGame:
     def _draw_mini_block(self, block: Block, x: int, y: int) -> None:
         """Draw a small preview of a block."""
         mini_size = 12
-        for row_idx, row in enumerate(block.shape):
+        # Use shape[rotation] to get the correct rotation state
+        current_shape = block.shape[block.rotation]
+        for row_idx, row in enumerate(current_shape):
             for col_idx, cell in enumerate(row):
                 if cell:
                     pygame.draw.rect(self.screen, block.color,

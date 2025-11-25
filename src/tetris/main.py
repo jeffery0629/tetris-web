@@ -18,21 +18,24 @@ async def main():
         # Show mode selection menu
         menu = ModeSelectionMenu(save_manager)
         selected_mode = await menu.run_async()
-        menu.quit()
 
         if selected_mode is None:
             # User quit
+            menu.quit()
             break
 
         # Handle Battle mode separately (desktop only for now)
         if selected_mode == GameMode.BATTLE:
+            # Quit menu first, then run battle mode with its own window
+            menu.quit()
             from .battle_game import BattleGame
             battle_game = BattleGame()
             battle_game.run()
-            # Battle mode doesn't save scores
-            # Reinitialize pygame after battle (window size may have changed)
-            pygame.quit()
+            # Battle mode's run() already calls pygame.quit() at the end
             continue
+
+        # For non-battle modes, quit menu before starting game
+        menu.quit()
 
         # Run game with selected mode
         game = GameEnhanced(mode=selected_mode)
