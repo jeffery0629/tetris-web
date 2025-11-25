@@ -5,6 +5,7 @@ import asyncio
 from .menu import ModeSelectionMenu
 from .game import GameEnhanced
 from .save_manager import SaveManager
+from .constants import GameMode
 
 
 async def main():
@@ -21,6 +22,14 @@ async def main():
         if selected_mode is None:
             # User quit
             break
+
+        # Handle Battle mode separately (desktop only for now)
+        if selected_mode == GameMode.BATTLE:
+            from .battle_game import BattleGame
+            battle_game = BattleGame()
+            battle_game.run()
+            # Battle mode doesn't save scores
+            continue
 
         # Run game with selected mode
         game = GameEnhanced(mode=selected_mode)

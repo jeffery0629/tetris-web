@@ -121,11 +121,11 @@ class ModeSelectionMenu:
         except (pygame.error, FileNotFoundError):
             self.mode_icons['crazy'] = None
 
-        # Create buttons - 3 modes (larger for better mobile touch)
+        # Create buttons - 4 modes (adjusted size for fitting)
         button_width = 420
-        button_height = 140
-        button_spacing = 25
-        start_y = 200
+        button_height = 110
+        button_spacing = 15
+        start_y = 180
 
         self.buttons = [
             ModeButton(
@@ -161,6 +161,17 @@ class ModeSelectionMenu:
                 unlocked=save_manager.is_mode_unlocked("crazy"),
                 icon=self.mode_icons.get('crazy')
             ),
+            ModeButton(
+                mode=GameMode.BATTLE,
+                display_name="BATTLE [2P LOCAL]",
+                description="10min fight - send garbage!",
+                x=WINDOW_WIDTH // 2 - button_width // 2,
+                y=start_y + (button_height + button_spacing) * 3,
+                width=button_width,
+                height=button_height,
+                unlocked=True,
+                icon=None  # No icon for battle mode yet
+            ),
         ]
 
         self.selected_mode: Optional[GameMode] = None
@@ -184,6 +195,8 @@ class ModeSelectionMenu:
                     elif event.key == pygame.K_3:
                         if self.save_manager.is_mode_unlocked("crazy"):
                             return GameMode.CRAZY
+                    elif event.key == pygame.K_4:
+                        return GameMode.BATTLE
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
                         if button.is_clicked(mouse_pos):
@@ -241,6 +254,8 @@ class ModeSelectionMenu:
                     elif event.key == pygame.K_3:
                         if self.save_manager.is_mode_unlocked("crazy"):
                             return GameMode.CRAZY
+                    elif event.key == pygame.K_4:
+                        return GameMode.BATTLE
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
                         if button.is_clicked(mouse_pos):

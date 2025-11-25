@@ -116,6 +116,41 @@ class GameMode(Enum):
     CASUAL = "casual"
     CLASSIC = "classic"
     CRAZY = "crazy"
+    BATTLE = "battle"
+
+
+class BattlePowerUpType(Enum):
+    """Battle mode power-up types (attack opponent)."""
+    INK = "ink"                    # Cover opponent's lower screen
+    SPEED_UP = "speed_up"          # Double opponent's fall speed
+    REVERSE = "reverse"            # Reverse opponent's left/right controls
+    FOG = "fog"                    # Hide opponent's next block preview
+    EARTHQUAKE = "earthquake"      # Shake opponent's board
+
+
+# Battle mode constants
+BATTLE_DURATION = 600  # 10 minutes in seconds
+BATTLE_GRID = (10, 20)  # Standard grid for battle
+
+# Garbage lines sent based on lines cleared
+GARBAGE_LINES = {
+    1: 0,  # Single - no garbage
+    2: 1,  # Double - 1 line
+    3: 2,  # Triple - 2 lines
+    4: 4,  # Tetris - 4 lines
+}
+
+# Battle power-up durations (seconds)
+BATTLE_POWERUP_DURATION = {
+    BattlePowerUpType.INK: 5.0,
+    BattlePowerUpType.SPEED_UP: 8.0,
+    BattlePowerUpType.REVERSE: 6.0,
+    BattlePowerUpType.FOG: 10.0,
+    BattlePowerUpType.EARTHQUAKE: 4.0,
+}
+
+# Battle power-up spawn rate (higher than normal)
+BATTLE_POWERUP_SPAWN_RATE = 0.15
 
 
 class PowerUpType(Enum):
@@ -133,6 +168,7 @@ UNLOCK_REQUIREMENTS = {
     GameMode.CASUAL: 0,      # Always unlocked
     GameMode.CLASSIC: 0,     # Always unlocked
     GameMode.CRAZY: 0,       # Always unlocked (was 50 lines)
+    GameMode.BATTLE: 0,      # Always unlocked
 }
 
 # Save file
