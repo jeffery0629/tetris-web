@@ -346,3 +346,97 @@ MAX_POWERUP_INVENTORY = 2
 - ✅ Ghost mode respects boundaries
 - ✅ Left/right touch zones maximized
 - ✅ Classic block style renders correctly
+
+---
+
+## Secure Leaderboard System (Phase 8) - COMPLETED ✅
+
+### Architecture Overview
+```
+Web Game → Cloudflare Worker (Proxy) → GitHub Gist (Database)
+                ↑ Token stored securely here
+```
+
+**Security Benefits**:
+- ✅ GitHub Token never exposed to players
+- ✅ Built-in anti-cheat (score limits)
+- ✅ Free with no server maintenance
+- ✅ Global CDN acceleration
+
+### Implementation Details
+
+#### 1. Cloudflare Worker Proxy
+- **Worker URL**: `https://tetris-leaderboard.jefferysung860629.workers.dev`
+- **Endpoints**:
+  - `GET /leaderboard` - Fetch all scores
+  - `POST /submit` - Submit new score
+- **Environment Variables** (stored as Secrets):
+  - `GIST_ID`: GitHub Gist ID for data storage
+  - `GITHUB_TOKEN`: Token with `gist` scope only
+- **Anti-cheat Score Limits**:
+  - Casual: 50,000
+  - Classic: 100,000
+  - Crazy: 200,000
+- **CORS**: Only allows `jeffery0629.github.io` and `localhost:8000`
+
+#### 2. Web Version HTTP Requests
+- **Problem**: Pygbag/WebAssembly doesn't support `requests` library or async `fetch` with `await`
+- **Solution**: Synchronous `XMLHttpRequest` via `window.eval()`
+```python
+# Both GET and POST use this pattern
+js_code = f'''
+(function() {{
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "{url}", false);  // false = synchronous
+    xhr.setRequestHeader("Content-Type", "application/json");
+    try {{
+        xhr.send('{body}');
+        return JSON.stringify({{ok: xhr.status === 200, status: xhr.status, text: xhr.responseText}});
+    }} catch (e) {{
+        return JSON.stringify({{ok: false, status: 0, text: e.toString()}});
+    }}
+}})()
+'''
+result_str = window.eval(js_code)
+```
+
+#### 3. Desktop Version
+- Uses standard `requests` library
+- Reads `WORKER_URL` from `.env` file or uses default
+
+### Files Modified/Created
+- `src/tetris/leaderboard_manager.py` - Refactored to use Worker API
+- `src/tetris/game.py` - Added `SUBMITTING_SCORE` state for async handling
+- `src/tetris/constants.py` - Added `SUBMITTING_SCORE` enum
+- `docs/cloudflare-worker.js` - Worker source code reference
+- `docs/LEADERBOARD_SETUP.md` - Updated setup guide
+- `.github/workflows/deploy-pygbag.yml` - Removed token exposure
+
+### Critical Bug Fixes
+
+#### Fix 1: Token Exposure in Web Build
+- **Problem**: GitHub Token was being injected into `web_config.py` during GitHub Actions build
+- **Solution**: Removed token generation, use Cloudflare Worker as secure proxy
+
+#### Fix 2: Async Fetch Hanging (30+ seconds)
+- **Problem**: `await result_promise` from `window.eval()` async IIFE didn't work in Pygbag
+- **Solution**: Changed to synchronous `XMLHttpRequest` with `xhr.open(method, url, false)`
+
+### Data Storage (GitHub Gist)
+```json
+{
+  "casual": [
+    {"player_id": "Claire", "score": 240604, "lines": 50, "level": 5, ...}
+  ],
+  "classic": [],
+  "crazy": []
+}
+```
+
+### Testing Checklist
+- ✅ Score submission works without hanging
+- ✅ Leaderboard displays correctly
+- ✅ Player's own scores highlighted in orange
+- ✅ Token not exposed in browser DevTools
+- ✅ Anti-cheat rejects invalid scores
+- ✅ Desktop version works with `.env` config
