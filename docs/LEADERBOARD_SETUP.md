@@ -1,11 +1,23 @@
 # Leaderboard Setup Guide
 
 ## 功能說明
-遊戲現在支援**全球排行榜**功能，使用 GitHub Gist 作為雲端儲存。朋友們可以看到彼此的分數並互相競爭！
+遊戲現在支援**全球排行榜**功能，使用 **Cloudflare Worker + GitHub Gist** 作為安全的雲端儲存。朋友們可以看到彼此的分數並互相競爭！
+
+### 架構說明
+```
+Web 遊戲 → Cloudflare Worker (代理) → GitHub Gist (資料庫)
+              ↑ Token 安全存放在此
+```
+
+**優點**：
+- ✅ GitHub Token 不會暴露給玩家
+- ✅ 內建防作弊檢查（分數上限）
+- ✅ 免費且無需伺服器維護
+- ✅ 全球 CDN 加速
 
 ---
 
-## 設定步驟 (5分鐘)
+## 設定步驟 (10分鐘)
 
 ### Step 1: 建立 GitHub Gist
 
@@ -44,41 +56,45 @@
 
 ---
 
-### Step 3: 設定環境變數
+### Step 3: 部署 Cloudflare Worker
 
-#### 方案A：本地桌面版 (PyInstaller .exe)
+1. 註冊 Cloudflare 帳號：https://dash.cloudflare.com/sign-up（免費）
+2. 前往 **Workers & Pages** → **Create application** → **Create Worker**
+3. 命名為 `tetris-leaderboard`，點擊 **Deploy**
+4. 點擊 **Edit code**，貼上 Worker 程式碼（見下方）
+5. 點擊 **Save and Deploy**
 
-建立檔案 `.env` 在專案根目錄：
-```bash
-# d:/Jeffery/claire/.env
-GIST_ID=abc123def456
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+**Worker 程式碼**：
+```javascript
+// 見專案中的 docs/cloudflare-worker.js
+// 或直接從 GitHub 複製：
+// https://github.com/jeffery0629/claire/blob/main/docs/cloudflare-worker.js
 ```
 
-**注意**：`.env` 檔案不會被提交到 Git (已在 .gitignore)
+6. 前往 **Settings** → **Variables and Secrets**
+7. 新增兩個 **Secret** 變數：
+   - `GIST_ID`: 你的 Gist ID
+   - `GITHUB_TOKEN`: 你的 GitHub Token
 
-#### 方案B：Web 版 (GitHub Pages)
-
-需要在 **GitHub Actions Secrets** 設定：
-
-1. 前往你的 repo: https://github.com/jeffery0629/tetris-web
-2. 點擊 **Settings** → **Secrets and variables** → **Actions**
-3. 點擊 **"New repository secret"**
-4. 新增兩個 secrets：
-   - Name: `GIST_ID`, Value: `abc123def456`
-   - Name: `GITHUB_TOKEN`, Value: `ghp_xxx...`
-
-5. 修改 `.github/workflows/deploy-pygbag.yml`，在 build 步驟前加入：
-   ```yaml
-   - name: Set environment variables
-     run: |
-       echo "GIST_ID=${{ secrets.GIST_ID }}" >> $GITHUB_ENV
-       echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
-   ```
+8. 記下 Worker URL（例如：`https://tetris-leaderboard.你的帳號.workers.dev`）
 
 ---
 
-### Step 4: 安裝依賴套件
+### Step 4: 更新遊戲設定（Web 版自動使用）
+
+**桌面版 (.exe)**：
+如果要在本地測試，建立 `.env` 檔案：
+```bash
+# d:/Jeffery/claire/.env
+WORKER_URL=https://tetris-leaderboard.你的帳號.workers.dev
+```
+
+**Web 版**：
+程式碼已內建 Worker URL，無需額外設定。
+
+---
+
+### Step 5: 安裝依賴套件
 
 排行榜功能需要 `requests` 套件：
 
@@ -92,7 +108,7 @@ pip install requests
 
 ---
 
-### Step 5: 測試排行榜
+### Step 6: 測試排行榜
 
 1. 啟動遊戲
 2. 完成一局遊戲
@@ -130,21 +146,25 @@ pip install requests
 
 ---
 
-## 安全性注意事項
+## 安全性說明
 
-### GitHub Token 安全
-- ❌ **絕對不要**將 Token 提交到 Git
+### ✅ 新架構的安全性
+- **Token 永不暴露**：存放在 Cloudflare Worker 環境變數中（加密）
+- **防作弊機制**：Worker 會檢查分數上限
+  - Casual: 50,000 分
+  - Classic: 100,000 分
+  - Crazy: 200,000 分
+- **CORS 保護**：只允許特定網域存取
+- **API 限流**：Cloudflare 自動防護 DDoS
+
+### GitHub Token 權限
 - ✅ Token 只有 `gist` 權限（無法存取你的其他資料）
-- ✅ 可隨時在 GitHub 撤銷 Token
+- ✅ 可隨時在 GitHub Settings 撤銷並重新生成
 
 ### Gist 公開性
-- ⚠️ Gist 是公開的，任何人都能讀取
-- ⚠️ 理論上有人可以手動編輯 Gist 作弊
+- ℹ️ Gist 是公開的，任何人都能**讀取**
+- ✅ 但只有透過 Worker 才能**寫入**（需通過驗證）
 - ℹ️ 如果發現作弊，可以在 Gist 頁面手動刪除該筆紀錄
-
-### 建議作法
-- 定期備份 Gist (GitHub 會保留版本歷史)
-- 如果 Token 洩漏，立即到 GitHub Settings 撤銷舊 Token 並重新生成
 
 ---
 
