@@ -101,27 +101,26 @@ class GistLeaderboardManager:
             return None
 
     async def _fetch_leaderboard_web_async(self) -> Optional[Dict]:
-        """Fetch leaderboard using JavaScript fetch API (Web only)."""
+        """Fetch leaderboard using synchronous XMLHttpRequest (Web only)."""
         try:
             from platform import window
             url = f'{self.worker_url}/leaderboard'
 
-            # Use eval to run JavaScript fetch
+            # Use synchronous XMLHttpRequest (simpler and more reliable)
             js_code = f'''
-            (async function() {{
+            (function() {{
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "{url}", false);
                 try {{
-                    const response = await fetch("{url}");
-                    const text = await response.text();
-                    return JSON.stringify({{ok: response.ok, status: response.status, text: text}});
+                    xhr.send(null);
+                    return JSON.stringify({{ok: xhr.status === 200, status: xhr.status, text: xhr.responseText}});
                 }} catch (e) {{
                     return JSON.stringify({{ok: false, status: 0, text: e.toString()}});
                 }}
             }})()
             '''
 
-            # Execute and await the JavaScript Promise
-            result_promise = window.eval(js_code)
-            result_str = await result_promise
+            result_str = window.eval(js_code)
             result_data = json.loads(result_str)
 
             if result_data['ok']:
@@ -206,34 +205,30 @@ class GistLeaderboardManager:
             return False, "Failed to submit score (network error)"
 
     async def _submit_score_web_async(self, payload: Dict) -> Tuple[bool, str]:
-        """Submit score using JavaScript fetch API (Web only)."""
+        """Submit score using synchronous XMLHttpRequest (Web only)."""
         try:
             from platform import window
 
             url = f'{self.worker_url}/submit'
             body = json.dumps(payload)
 
-            # Use eval to create proper JavaScript object for fetch options
-            # This is the most reliable way in Pygbag
+            # Use synchronous XMLHttpRequest (same as GET method)
+            # Async fetch with await doesn't work properly in Pygbag
             js_code = f'''
-            (async function() {{
+            (function() {{
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "{url}", false);
+                xhr.setRequestHeader("Content-Type", "application/json");
                 try {{
-                    const response = await fetch("{url}", {{
-                        method: "POST",
-                        headers: {{"Content-Type": "application/json"}},
-                        body: '{body}'
-                    }});
-                    const text = await response.text();
-                    return JSON.stringify({{ok: response.ok, status: response.status, text: text}});
+                    xhr.send('{body}');
+                    return JSON.stringify({{ok: xhr.status === 200, status: xhr.status, text: xhr.responseText}});
                 }} catch (e) {{
                     return JSON.stringify({{ok: false, status: 0, text: e.toString()}});
                 }}
             }})()
             '''
 
-            # Execute and await the JavaScript Promise
-            result_promise = window.eval(js_code)
-            result_str = await result_promise
+            result_str = window.eval(js_code)
             result_data = json.loads(result_str)
 
             if result_data['ok']:
