@@ -83,7 +83,6 @@ class GistLeaderboardManager:
         # Async operation results (for Web version)
         self._last_fetch_result: Optional[Dict] = None
         self._last_submit_result: Optional[Tuple[bool, str]] = None
-        self._operation_pending: bool = False
 
     def _fetch_leaderboard_sync(self) -> Optional[Dict]:
         """Fetch leaderboard using synchronous requests (desktop only)."""
@@ -102,32 +101,35 @@ class GistLeaderboardManager:
             return None
 
     async def _fetch_leaderboard_web_async(self) -> Optional[Dict]:
-        """Fetch leaderboard using pygbag async fetch (Web only)."""
+        """Fetch leaderboard using JavaScript fetch API (Web only)."""
         try:
-            from pygbag.support.cross.aio.fetch import RequestHandler
-            handler = RequestHandler()
+            from platform import window
             url = f'{self.worker_url}/leaderboard'
 
-            response = await handler.get(url)
-            if response:
-                return json.loads(response)
+            # Use eval to run JavaScript fetch
+            js_code = f'''
+            (async function() {{
+                try {{
+                    const response = await fetch("{url}");
+                    const text = await response.text();
+                    return JSON.stringify({{ok: response.ok, status: response.status, text: text}});
+                }} catch (e) {{
+                    return JSON.stringify({{ok: false, status: 0, text: e.toString()}});
+                }}
+            }})()
+            '''
+
+            # Execute and await the JavaScript Promise
+            result_promise = window.eval(js_code)
+            result_str = await result_promise
+            result_data = json.loads(result_str)
+
+            if result_data['ok']:
+                return json.loads(result_data['text'])
             else:
-                print("Failed to fetch leaderboard: empty response")
+                print(f"Failed to fetch leaderboard: {result_data['status']} - {result_data['text']}")
                 return None
-        except ImportError:
-            # Fallback: try using JavaScript directly
-            try:
-                import platform
-                url = f'{self.worker_url}/leaderboard'
-                # Use JavaScript fetch with async/await pattern
-                js_result = platform.window.fetch(url)
-                if js_result:
-                    response = await js_result
-                    text = await response.text()
-                    return json.loads(text)
-            except Exception as e:
-                print(f"Error fetching leaderboard (js fallback): {e}")
-            return None
+
         except Exception as e:
             print(f"Error fetching leaderboard (web): {e}")
             return None
@@ -204,48 +206,48 @@ class GistLeaderboardManager:
             return False, "Failed to submit score (network error)"
 
     async def _submit_score_web_async(self, payload: Dict) -> Tuple[bool, str]:
-        """Submit score using pygbag async fetch (Web only)."""
+        """Submit score using JavaScript fetch API (Web only)."""
         try:
-            from pygbag.support.cross.aio.fetch import RequestHandler
-            handler = RequestHandler()
+            from platform import window
+
             url = f'{self.worker_url}/submit'
+            body = json.dumps(payload)
 
-            # Convert payload to JSON string for POST
-            response = await handler.post(url, data=json.dumps(payload))
+            # Use eval to create proper JavaScript object for fetch options
+            # This is the most reliable way in Pygbag
+            js_code = f'''
+            (async function() {{
+                try {{
+                    const response = await fetch("{url}", {{
+                        method: "POST",
+                        headers: {{"Content-Type": "application/json"}},
+                        body: '{body}'
+                    }});
+                    const text = await response.text();
+                    return JSON.stringify({{ok: response.ok, status: response.status, text: text}});
+                }} catch (e) {{
+                    return JSON.stringify({{ok: false, status: 0, text: e.toString()}});
+                }}
+            }})()
+            '''
 
-            if response:
-                result = json.loads(response)
-                if result.get('success'):
-                    return True, result.get('message', 'Score submitted!')
+            # Execute and await the JavaScript Promise
+            result_promise = window.eval(js_code)
+            result_str = await result_promise
+            result_data = json.loads(result_str)
+
+            if result_data['ok']:
+                response_json = json.loads(result_data['text'])
+                if response_json.get('success'):
+                    return True, response_json.get('message', 'Score submitted!')
                 else:
-                    return False, result.get('error', 'Unknown error')
+                    return False, response_json.get('error', 'Unknown error')
             else:
-                return False, "Failed to submit: empty response"
-        except ImportError:
-            # Fallback: try using JavaScript directly
-            try:
-                import platform
-                url = f'{self.worker_url}/submit'
-                options = {
-                    'method': 'POST',
-                    'headers': {'Content-Type': 'application/json'},
-                    'body': json.dumps(payload)
-                }
-                js_result = platform.window.fetch(url, options)
-                if js_result:
-                    response = await js_result
-                    text = await response.text()
-                    result = json.loads(text)
-                    if result.get('success'):
-                        return True, result.get('message', 'Score submitted!')
-                    else:
-                        return False, result.get('error', 'Unknown error')
-            except Exception as e:
-                print(f"Error submitting score (js fallback): {e}")
-            return False, "Failed to submit score (network error)"
+                return False, f"HTTP error: {result_data['status']}"
+
         except Exception as e:
             print(f"Error submitting score (web): {e}")
-            return False, f"Failed to submit score: {e}"
+            return False, f"Failed to submit: {e}"
 
     def get_leaderboard(self, mode: str, limit: int = 10) -> List[LeaderboardEntry]:
         """Get top scores for a mode.
