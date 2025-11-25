@@ -80,9 +80,10 @@ class GistLeaderboardManager:
         # Online mode (always True if worker URL is set)
         self.online_mode = bool(self.worker_url)
 
-        # Pending async results (for Web version)
-        self._pending_fetch_result: Optional[Dict] = None
-        self._pending_submit_result: Optional[Tuple[bool, str]] = None
+        # Async operation results (for Web version)
+        self._last_fetch_result: Optional[Dict] = None
+        self._last_submit_result: Optional[Tuple[bool, str]] = None
+        self._operation_pending: bool = False
 
     def _fetch_leaderboard_sync(self) -> Optional[Dict]:
         """Fetch leaderboard using synchronous requests (desktop only)."""
@@ -100,34 +101,39 @@ class GistLeaderboardManager:
             print(f"Error fetching leaderboard: {e}")
             return None
 
-    def _fetch_leaderboard_web(self) -> Optional[Dict]:
-        """Fetch leaderboard using browser fetch API (Web/Pygbag)."""
+    async def _fetch_leaderboard_web_async(self) -> Optional[Dict]:
+        """Fetch leaderboard using pygbag async fetch (Web only)."""
         try:
-            import platform
-            if platform.window:
-                # Use JavaScript fetch via Pygbag
+            from pygbag.support.cross.aio.fetch import RequestHandler
+            handler = RequestHandler()
+            url = f'{self.worker_url}/leaderboard'
+
+            response = await handler.get(url)
+            if response:
+                return json.loads(response)
+            else:
+                print("Failed to fetch leaderboard: empty response")
+                return None
+        except ImportError:
+            # Fallback: try using JavaScript directly
+            try:
+                import platform
                 url = f'{self.worker_url}/leaderboard'
-                # Use synchronous XMLHttpRequest for simplicity
-                js_code = f"""
-                (function() {{
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', '{url}', false);  // false = synchronous
-                    xhr.send(null);
-                    if (xhr.status === 200) {{
-                        return xhr.responseText;
-                    }}
-                    return null;
-                }})()
-                """
-                result = platform.window.eval(js_code)
-                if result:
-                    return json.loads(result)
+                # Use JavaScript fetch with async/await pattern
+                js_result = platform.window.fetch(url)
+                if js_result:
+                    response = await js_result
+                    text = await response.text()
+                    return json.loads(text)
+            except Exception as e:
+                print(f"Error fetching leaderboard (js fallback): {e}")
+            return None
         except Exception as e:
             print(f"Error fetching leaderboard (web): {e}")
-        return None
+            return None
 
     def _fetch_leaderboard(self) -> Optional[Dict]:
-        """Fetch leaderboard data from Worker API.
+        """Fetch leaderboard data from Worker API (sync version for compatibility).
 
         Returns:
             Leaderboard data dict or None if failed
@@ -139,15 +145,40 @@ class GistLeaderboardManager:
         if self._cache and (time.time() - self._cache_time < self._cache_duration):
             return self._cache
 
-        # Use appropriate method based on platform
+        # For Web, return cached result if available (async fetch happens separately)
         if IS_WEB:
-            data = self._fetch_leaderboard_web()
+            return self._last_fetch_result
+
+        # Desktop: use sync request
+        data = self._fetch_leaderboard_sync()
+        if data:
+            self._cache = data
+            self._cache_time = time.time()
+
+        return data
+
+    async def fetch_leaderboard_async(self) -> Optional[Dict]:
+        """Fetch leaderboard data asynchronously (for Web version).
+
+        Call this method from your async game loop to fetch data.
+        Results are stored in _last_fetch_result for sync access.
+        """
+        if not self.online_mode:
+            return None
+
+        # Check cache
+        if self._cache and (time.time() - self._cache_time < self._cache_duration):
+            return self._cache
+
+        if IS_WEB:
+            data = await self._fetch_leaderboard_web_async()
         else:
             data = self._fetch_leaderboard_sync()
 
         if data:
             self._cache = data
             self._cache_time = time.time()
+            self._last_fetch_result = data
 
         return data
 
@@ -172,39 +203,49 @@ class GistLeaderboardManager:
             print(f"Error submitting score: {e}")
             return False, "Failed to submit score (network error)"
 
-    def _submit_score_web(self, payload: Dict) -> Tuple[bool, str]:
-        """Submit score using browser fetch API (Web/Pygbag)."""
+    async def _submit_score_web_async(self, payload: Dict) -> Tuple[bool, str]:
+        """Submit score using pygbag async fetch (Web only)."""
         try:
-            import platform
-            if platform.window:
+            from pygbag.support.cross.aio.fetch import RequestHandler
+            handler = RequestHandler()
+            url = f'{self.worker_url}/submit'
+
+            # Convert payload to JSON string for POST
+            response = await handler.post(url, data=json.dumps(payload))
+
+            if response:
+                result = json.loads(response)
+                if result.get('success'):
+                    return True, result.get('message', 'Score submitted!')
+                else:
+                    return False, result.get('error', 'Unknown error')
+            else:
+                return False, "Failed to submit: empty response"
+        except ImportError:
+            # Fallback: try using JavaScript directly
+            try:
+                import platform
                 url = f'{self.worker_url}/submit'
-                payload_json = json.dumps(payload)
-                # Use synchronous XMLHttpRequest
-                js_code = f"""
-                (function() {{
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', '{url}', false);
-                    xhr.setRequestHeader('Content-Type', 'application/json');
-                    xhr.send('{payload_json}');
-                    return JSON.stringify({{status: xhr.status, text: xhr.responseText}});
-                }})()
-                """
-                result_str = platform.window.eval(js_code)
-                if result_str:
-                    result = json.loads(result_str)
-                    if result['status'] == 200:
-                        data = json.loads(result['text'])
-                        return True, data.get('message', 'Score submitted!')
+                options = {
+                    'method': 'POST',
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps(payload)
+                }
+                js_result = platform.window.fetch(url, options)
+                if js_result:
+                    response = await js_result
+                    text = await response.text()
+                    result = json.loads(text)
+                    if result.get('success'):
+                        return True, result.get('message', 'Score submitted!')
                     else:
-                        try:
-                            error_data = json.loads(result['text'])
-                            error_msg = error_data.get('error', f"HTTP {result['status']}")
-                        except Exception:
-                            error_msg = f"HTTP {result['status']}"
-                        return False, f"Failed to submit: {error_msg}"
+                        return False, result.get('error', 'Unknown error')
+            except Exception as e:
+                print(f"Error submitting score (js fallback): {e}")
+            return False, "Failed to submit score (network error)"
         except Exception as e:
             print(f"Error submitting score (web): {e}")
-        return False, "Failed to submit score (network error)"
+            return False, f"Failed to submit score: {e}"
 
     def get_leaderboard(self, mode: str, limit: int = 10) -> List[LeaderboardEntry]:
         """Get top scores for a mode.
@@ -230,8 +271,68 @@ class GistLeaderboardManager:
         # Already sorted by Worker, just apply limit
         return entries[:limit]
 
+    async def get_leaderboard_async(self, mode: str, limit: int = 10) -> List[LeaderboardEntry]:
+        """Get top scores for a mode asynchronously.
+
+        Args:
+            mode: Game mode (casual/classic/crazy)
+            limit: Maximum number of entries to return
+
+        Returns:
+            List of LeaderboardEntry, sorted by score descending
+        """
+        if not self.online_mode:
+            return []
+
+        data = await self.fetch_leaderboard_async()
+        if not data:
+            return []
+
+        entries = []
+        for entry_dict in data.get(mode, []):
+            entries.append(LeaderboardEntry.from_dict(entry_dict))
+
+        return entries[:limit]
+
     def submit_score(self, entry: LeaderboardEntry) -> Tuple[bool, str]:
-        """Submit a new score to the leaderboard via Worker API.
+        """Submit a new score to the leaderboard via Worker API (sync).
+
+        For Web version, this returns the last async result.
+        Call submit_score_async() first from your async game loop.
+
+        Args:
+            entry: LeaderboardEntry to submit
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.online_mode:
+            return False, "Offline mode: No worker URL configured"
+
+        # For Web, return cached async result
+        if IS_WEB:
+            if self._last_submit_result:
+                result = self._last_submit_result
+                self._last_submit_result = None  # Clear after reading
+                return result
+            return False, "Submitting..."
+
+        # Desktop: use sync request
+        payload = {
+            'player_id': entry.player_id,
+            'score': entry.score,
+            'lines': entry.lines,
+            'level': entry.level,
+            'mode': entry.mode
+        }
+
+        # Invalidate cache
+        self._cache = None
+
+        return self._submit_score_sync(payload)
+
+    async def submit_score_async(self, entry: LeaderboardEntry) -> Tuple[bool, str]:
+        """Submit a new score to the leaderboard asynchronously.
 
         Args:
             entry: LeaderboardEntry to submit
@@ -250,12 +351,13 @@ class GistLeaderboardManager:
             'mode': entry.mode
         }
 
-        # Invalidate cache before submit
+        # Invalidate cache
         self._cache = None
 
-        # Use appropriate method based on platform
         if IS_WEB:
-            return self._submit_score_web(payload)
+            result = await self._submit_score_web_async(payload)
+            self._last_submit_result = result
+            return result
         else:
             return self._submit_score_sync(payload)
 

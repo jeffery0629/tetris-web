@@ -106,6 +106,7 @@ class GameState(Enum):
     PAUSED = "paused"
     GAME_OVER = "game_over"
     GAME_OVER_INPUT = "game_over_input"  # Waiting for player ID input
+    SUBMITTING_SCORE = "submitting_score"  # Async score submission in progress
     LEADERBOARD = "leaderboard"  # Showing leaderboard
     MODE_UNLOCKED = "mode_unlocked"
 

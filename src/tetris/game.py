@@ -101,6 +101,7 @@ class GameEnhanced:
         )
         self.leaderboard_entries = []  # Current leaderboard data
         self.current_player_id = ""  # Last entered player ID
+        self._pending_submit_player_id = None  # For async submit
 
         # Spawn first blocks
         self.spawn_new_block()
@@ -445,7 +446,9 @@ class GameEnhanced:
                 # User pressed Enter - submit score
                 player_id = self.text_input.get_text()
                 if player_id:
-                    self._submit_score_to_leaderboard(player_id)
+                    # Mark that we need to submit (will be handled in async loop)
+                    self._pending_submit_player_id = player_id
+                    self.state = GameState.SUBMITTING_SCORE
                 else:
                     # Skip if no ID entered
                     self.state = GameState.GAME_OVER
@@ -601,6 +604,14 @@ class GameEnhanced:
             # Then draw input overlay on top
             self._draw_input_overlay()
 
+        elif self.state == GameState.SUBMITTING_SCORE:
+            # Show "Submitting..." screen
+            self.renderer.draw_game_over_screen(
+                self.score, self.lines_cleared, self.high_score
+            )
+            # Draw submitting overlay
+            self._draw_submitting_overlay()
+
         elif self.state == GameState.LEADERBOARD:
             # Show leaderboard
             self.renderer.draw_leaderboard_screen(
@@ -639,8 +650,8 @@ class GameEnhanced:
         self.spawn_new_block()
         self.next_block = self.generate_block()
 
-    def _submit_score_to_leaderboard(self, player_id: str) -> None:
-        """Submit score to leaderboard and show rankings.
+    async def _submit_score_to_leaderboard_async(self, player_id: str) -> None:
+        """Submit score to leaderboard and show rankings (async version).
 
         Args:
             player_id: Player's chosen ID
@@ -656,6 +667,40 @@ class GameEnhanced:
             mode=self.mode.value  # "casual", "classic", or "crazy"
         )
 
+        # Submit to cloud (async)
+        success, message = await self.leaderboard_manager.submit_score_async(entry)
+
+        if success:
+            self.show_notification(message)
+        else:
+            self.show_notification(f"Upload failed: {message}")
+
+        # Fetch and show leaderboard (even if upload failed) - async
+        self.leaderboard_entries = await self.leaderboard_manager.get_leaderboard_async(
+            mode=self.mode.value,
+            limit=10
+        )
+
+        # Switch to leaderboard view
+        self.state = GameState.LEADERBOARD
+
+    def _submit_score_to_leaderboard(self, player_id: str) -> None:
+        """Submit score to leaderboard (sync fallback for desktop).
+
+        Args:
+            player_id: Player's chosen ID
+        """
+        self.current_player_id = player_id
+
+        # Create entry
+        entry = LeaderboardEntry(
+            player_id=player_id,
+            score=self.score,
+            lines=self.lines_cleared,
+            level=self.level,
+            mode=self.mode.value
+        )
+
         # Submit to cloud
         success, message = self.leaderboard_manager.submit_score(entry)
 
@@ -664,7 +709,7 @@ class GameEnhanced:
         else:
             self.show_notification(f"Upload failed: {message}")
 
-        # Fetch and show leaderboard (even if upload failed)
+        # Fetch and show leaderboard
         self.leaderboard_entries = self.leaderboard_manager.get_leaderboard(
             mode=self.mode.value,
             limit=10
@@ -721,6 +766,39 @@ class GameEnhanced:
             center=True
         )
 
+    def _draw_submitting_overlay(self) -> None:
+        """Draw 'Submitting...' overlay during score upload."""
+        # Small overlay panel
+        panel_width = 300
+        panel_height = 100
+        panel_x = (800 - panel_width) // 2
+        panel_y = 300
+
+        # Semi-transparent background
+        overlay = pygame.Surface((panel_width, panel_height))
+        overlay.set_alpha(240)
+        overlay.fill((255, 255, 255))
+        self.renderer.screen.blit(overlay, (panel_x, panel_y))
+
+        # Border
+        pygame.draw.rect(
+            self.renderer.screen,
+            (100, 100, 100),
+            pygame.Rect(panel_x, panel_y, panel_width, panel_height),
+            3,
+            border_radius=15
+        )
+
+        # Submitting text
+        self.renderer.draw_text(
+            "Submitting score...",
+            panel_x + panel_width // 2,
+            panel_y + 50,
+            self.renderer.font_small,
+            (80, 70, 90),
+            center=True
+        )
+
     def run(self) -> None:
         """Main game loop (synchronous version for desktop)."""
         running = True
@@ -759,6 +837,12 @@ class GameEnhanced:
             if self.should_exit_to_menu:
                 running = False
                 break
+
+            # Handle async score submission
+            if self.state == GameState.SUBMITTING_SCORE and self._pending_submit_player_id:
+                player_id = self._pending_submit_player_id
+                self._pending_submit_player_id = None
+                await self._submit_score_to_leaderboard_async(player_id)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
