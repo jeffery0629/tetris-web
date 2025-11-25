@@ -3,11 +3,15 @@
 import json
 import time
 import os
+import sys
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 
 # Default Worker URL (can be overridden via environment variable)
 DEFAULT_WORKER_URL = 'https://tetris-leaderboard.jefferysung860629.workers.dev'
+
+# Detect if running in Web/Pygbag environment
+IS_WEB = sys.platform == "emscripten"
 
 
 class LeaderboardEntry:
@@ -76,6 +80,52 @@ class GistLeaderboardManager:
         # Online mode (always True if worker URL is set)
         self.online_mode = bool(self.worker_url)
 
+        # Pending async results (for Web version)
+        self._pending_fetch_result: Optional[Dict] = None
+        self._pending_submit_result: Optional[Tuple[bool, str]] = None
+
+    def _fetch_leaderboard_sync(self) -> Optional[Dict]:
+        """Fetch leaderboard using synchronous requests (desktop only)."""
+        try:
+            import requests
+            url = f'{self.worker_url}/leaderboard'
+            response = requests.get(url, timeout=5)
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Failed to fetch leaderboard: {response.status_code}")
+                return None
+        except Exception as e:
+            print(f"Error fetching leaderboard: {e}")
+            return None
+
+    def _fetch_leaderboard_web(self) -> Optional[Dict]:
+        """Fetch leaderboard using browser fetch API (Web/Pygbag)."""
+        try:
+            import platform
+            if platform.window:
+                # Use JavaScript fetch via Pygbag
+                url = f'{self.worker_url}/leaderboard'
+                # Use synchronous XMLHttpRequest for simplicity
+                js_code = f"""
+                (function() {{
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', '{url}', false);  // false = synchronous
+                    xhr.send(null);
+                    if (xhr.status === 200) {{
+                        return xhr.responseText;
+                    }}
+                    return null;
+                }})()
+                """
+                result = platform.window.eval(js_code)
+                if result:
+                    return json.loads(result)
+        except Exception as e:
+            print(f"Error fetching leaderboard (web): {e}")
+        return None
+
     def _fetch_leaderboard(self) -> Optional[Dict]:
         """Fetch leaderboard data from Worker API.
 
@@ -89,21 +139,72 @@ class GistLeaderboardManager:
         if self._cache and (time.time() - self._cache_time < self._cache_duration):
             return self._cache
 
+        # Use appropriate method based on platform
+        if IS_WEB:
+            data = self._fetch_leaderboard_web()
+        else:
+            data = self._fetch_leaderboard_sync()
+
+        if data:
+            self._cache = data
+            self._cache_time = time.time()
+
+        return data
+
+    def _submit_score_sync(self, payload: Dict) -> Tuple[bool, str]:
+        """Submit score using synchronous requests (desktop only)."""
         try:
             import requests
-            url = f'{self.worker_url}/leaderboard'
-            response = requests.get(url, timeout=5)
+            url = f'{self.worker_url}/submit'
+            response = requests.post(url, json=payload, timeout=10)
 
             if response.status_code == 200:
-                self._cache = response.json()
-                self._cache_time = time.time()
-                return self._cache
+                result = response.json()
+                return True, result.get('message', 'Score submitted!')
             else:
-                print(f"Failed to fetch leaderboard: {response.status_code}")
-                return None
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('error', f'HTTP {response.status_code}')
+                except Exception:
+                    error_msg = f'HTTP {response.status_code}'
+                return False, f"Failed to submit: {error_msg}"
         except Exception as e:
-            print(f"Error fetching leaderboard: {e}")
-            return None
+            print(f"Error submitting score: {e}")
+            return False, "Failed to submit score (network error)"
+
+    def _submit_score_web(self, payload: Dict) -> Tuple[bool, str]:
+        """Submit score using browser fetch API (Web/Pygbag)."""
+        try:
+            import platform
+            if platform.window:
+                url = f'{self.worker_url}/submit'
+                payload_json = json.dumps(payload)
+                # Use synchronous XMLHttpRequest
+                js_code = f"""
+                (function() {{
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '{url}', false);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.send('{payload_json}');
+                    return JSON.stringify({{status: xhr.status, text: xhr.responseText}});
+                }})()
+                """
+                result_str = platform.window.eval(js_code)
+                if result_str:
+                    result = json.loads(result_str)
+                    if result['status'] == 200:
+                        data = json.loads(result['text'])
+                        return True, data.get('message', 'Score submitted!')
+                    else:
+                        try:
+                            error_data = json.loads(result['text'])
+                            error_msg = error_data.get('error', f"HTTP {result['status']}")
+                        except Exception:
+                            error_msg = f"HTTP {result['status']}"
+                        return False, f"Failed to submit: {error_msg}"
+        except Exception as e:
+            print(f"Error submitting score (web): {e}")
+        return False, "Failed to submit score (network error)"
 
     def get_leaderboard(self, mode: str, limit: int = 10) -> List[LeaderboardEntry]:
         """Get top scores for a mode.
@@ -141,32 +242,22 @@ class GistLeaderboardManager:
         if not self.online_mode:
             return False, "Offline mode: No worker URL configured"
 
-        try:
-            import requests
-            url = f'{self.worker_url}/submit'
-            payload = {
-                'player_id': entry.player_id,
-                'score': entry.score,
-                'lines': entry.lines,
-                'level': entry.level,
-                'mode': entry.mode
-            }
+        payload = {
+            'player_id': entry.player_id,
+            'score': entry.score,
+            'lines': entry.lines,
+            'level': entry.level,
+            'mode': entry.mode
+        }
 
-            response = requests.post(url, json=payload, timeout=10)
+        # Invalidate cache before submit
+        self._cache = None
 
-            if response.status_code == 200:
-                result = response.json()
-                # Invalidate cache
-                self._cache = None
-                return True, result.get('message', 'Score submitted!')
-            else:
-                error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
-                error_msg = error_data.get('error', f'HTTP {response.status_code}')
-                return False, f"Failed to submit: {error_msg}"
-
-        except Exception as e:
-            print(f"Error submitting score: {e}")
-            return False, "Failed to submit score (network error)"
+        # Use appropriate method based on platform
+        if IS_WEB:
+            return self._submit_score_web(payload)
+        else:
+            return self._submit_score_sync(payload)
 
     def get_player_rank(self, mode: str, score: int) -> Optional[int]:
         """Get rank for a given score in a mode.
