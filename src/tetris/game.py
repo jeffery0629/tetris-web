@@ -4,8 +4,12 @@ import pygame
 import time
 import random
 import asyncio
+import sys
 from typing import Optional, Callable
 from .board import Board
+
+# Detect if running in Web/Pygbag environment
+IS_WEB = sys.platform == "emscripten"
 from .tetromino import Block, get_random_tetromino
 from .pentomino import get_random_pentomino
 from .renderer import Renderer
@@ -102,6 +106,11 @@ class GameEnhanced:
         self.leaderboard_entries = []  # Current leaderboard data
         self.current_player_id = ""  # Last entered player ID
         self._pending_submit_player_id = None  # For async submit
+
+        # Mobile input button rects (for touch handling)
+        self._submit_button_rect = None
+        self._skip_button_rect = None
+        self._input_box_rect = None  # For triggering browser prompt on mobile
 
         # Spawn first blocks
         self.spawn_new_block()
@@ -436,10 +445,69 @@ class GameEnhanced:
                     self.score += SCORE_SOFT_DROP
                     self.last_down_move = current_time
 
+    def _show_browser_prompt(self) -> Optional[str]:
+        """Show browser prompt dialog for text input (Web only).
+
+        Returns:
+            User input string or None if cancelled
+        """
+        if not IS_WEB:
+            return None
+
+        try:
+            from platform import window
+
+            # Use browser's native prompt - this will show mobile keyboard
+            js_code = '''
+            (function() {
+                var result = prompt("Enter your Player ID (max 12 chars):", "");
+                if (result === null) return "";
+                return result.slice(0, 12);
+            })()
+            '''
+            result = window.eval(js_code)
+            return result if result else None
+        except Exception as e:
+            print(f"Error showing prompt: {e}")
+            return None
+
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle pygame events (keyboard + touch)."""
         # Handle text input during game over input state
         if self.state == GameState.GAME_OVER_INPUT:
+            # Mobile: Handle button clicks
+            if IS_WEB and event.type == pygame.MOUSEBUTTONDOWN:
+                pos = event.pos
+
+                # Check if tapped on input box - show browser prompt
+                if self._input_box_rect and self._input_box_rect.collidepoint(pos):
+                    player_id = self._show_browser_prompt()
+                    if player_id:
+                        self.text_input.set_text(player_id)
+                    return
+
+                # Check OK button
+                if self._submit_button_rect and self._submit_button_rect.collidepoint(pos):
+                    player_id = self.text_input.get_text()
+                    if player_id:
+                        self._pending_submit_player_id = player_id
+                        self.state = GameState.SUBMITTING_SCORE
+                    else:
+                        # No name entered, show prompt first
+                        player_id = self._show_browser_prompt()
+                        if player_id:
+                            self._pending_submit_player_id = player_id
+                            self.state = GameState.SUBMITTING_SCORE
+                        else:
+                            self.state = GameState.GAME_OVER
+                    return
+
+                # Check SKIP button
+                if self._skip_button_rect and self._skip_button_rect.collidepoint(pos):
+                    self.state = GameState.GAME_OVER
+                    return
+
+            # Desktop: Handle keyboard input
             modified = self.text_input.handle_event(event)
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
@@ -722,7 +790,7 @@ class GameEnhanced:
         """Draw player ID input overlay on top of game over screen."""
         # Small overlay panel
         panel_width = 400
-        panel_height = 200
+        panel_height = 250 if IS_WEB else 200
         panel_x = (800 - panel_width) // 2  # WINDOW_WIDTH = 800
         panel_y = 250
 
@@ -751,20 +819,56 @@ class GameEnhanced:
             center=True
         )
 
-        # Text input box
+        # Text input box (clickable on mobile to trigger prompt)
         self.text_input.rect.centerx = panel_x + panel_width // 2
         self.text_input.rect.y = panel_y + 80
-        self.text_input.draw(self.renderer.screen, placeholder="Your Name")
+        self._input_box_rect = self.text_input.rect.copy()
+        self.text_input.draw(self.renderer.screen, placeholder="Tap to enter name" if IS_WEB else "Your Name")
 
-        # Hint text
-        self.renderer.draw_text(
-            "Press ENTER to submit",
-            panel_x + panel_width // 2,
-            panel_y + 150,
-            self.renderer.font_small,
-            (150, 150, 150),
-            center=True
-        )
+        if IS_WEB:
+            # Mobile: Show OK and SKIP buttons
+            button_width = 120
+            button_height = 50
+            button_y = panel_y + 150
+            gap = 20
+
+            # OK button (green)
+            ok_x = panel_x + panel_width // 2 - button_width - gap // 2
+            self._submit_button_rect = pygame.Rect(ok_x, button_y, button_width, button_height)
+            pygame.draw.rect(self.renderer.screen, (76, 175, 80), self._submit_button_rect, border_radius=10)
+            pygame.draw.rect(self.renderer.screen, (56, 142, 60), self._submit_button_rect, 3, border_radius=10)
+            self.renderer.draw_text(
+                "OK",
+                ok_x + button_width // 2,
+                button_y + button_height // 2,
+                self.renderer.font_small,
+                (255, 255, 255),
+                center=True
+            )
+
+            # SKIP button (gray)
+            skip_x = panel_x + panel_width // 2 + gap // 2
+            self._skip_button_rect = pygame.Rect(skip_x, button_y, button_width, button_height)
+            pygame.draw.rect(self.renderer.screen, (158, 158, 158), self._skip_button_rect, border_radius=10)
+            pygame.draw.rect(self.renderer.screen, (117, 117, 117), self._skip_button_rect, 3, border_radius=10)
+            self.renderer.draw_text(
+                "SKIP",
+                skip_x + button_width // 2,
+                button_y + button_height // 2,
+                self.renderer.font_small,
+                (255, 255, 255),
+                center=True
+            )
+        else:
+            # Desktop: Hint text
+            self.renderer.draw_text(
+                "Press ENTER to submit",
+                panel_x + panel_width // 2,
+                panel_y + 150,
+                self.renderer.font_small,
+                (150, 150, 150),
+                center=True
+            )
 
     def _draw_submitting_overlay(self) -> None:
         """Draw 'Submitting...' overlay during score upload."""
