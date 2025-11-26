@@ -25,7 +25,8 @@
 ```
 src/tetris/
 ├── main.py           # Entry point & game loop
-├── game.py           # Game controller
+├── game.py           # Game controller (single player)
+├── battle_game.py    # Battle Mode controller (2-player)
 ├── board.py          # Board logic
 ├── tetromino.py      # 4-block shapes (7 types)
 ├── pentomino.py      # 5-block shapes (18 types)
@@ -484,6 +485,40 @@ result_str = window.eval(js_code)
 - **Solution**: Replaced all `check_collision()` calls with `is_valid_position()` and inverted logic
   - `check_collision()` returns True when collision exists
   - `is_valid_position()` returns True when NO collision (valid move)
+
+#### Fix 2: Block Shape Structure Misuse
+- **Problem**: Blocks rendered incorrectly, rotation destroyed block shapes
+- **Root Cause**: `Block.shape` is a list of 4 rotation states (2D matrices), not a single 2D matrix
+- **Solution**:
+  - `_spawn_block()`: Use `shape[rotation][0]` for width calculation
+  - `_rotate_block()`: Use `Block.rotate_cw()/rotate_ccw()` API instead of manual rotation
+  - `_draw_player()`: Use `Block.get_cells()` for correct cell positions
+  - `_draw_mini_block()`: Use `shape[rotation]` for preview rendering
+
+#### Fix 3: Floating Block Bug
+- **Problem**: Blocks could float in air after horizontal movement while on ground
+- **Root Cause**: Lock delay didn't re-check ground state after horizontal move
+- **Solution**: After any horizontal movement in `_move_block()`, check if space exists below
+  ```python
+  if dx != 0:
+      player.current_block.y += 1
+      if player.board.is_valid_position(player.current_block):
+          player.is_on_ground = False
+          player.lock_timer = 0
+      player.current_block.y -= 1
+  ```
+
+#### Fix 4: Ink Overlay Too Light
+- **Problem**: User feedback "墨汁感覺不夠黑" (ink not dark enough)
+- **Solution**: Enhanced ink effect
+  - Color: `(20, 20, 30)` → `(5, 5, 10)` (darker)
+  - Alpha: `220` → `245` (more opaque)
+  - Coverage: 50% → 67% (covers more of screen)
+
+#### Fix 5: Pygame Initialization Order
+- **Problem**: Battle Mode entry caused lag/freeze
+- **Root Cause**: Menu's pygame instance conflicted with Battle Mode's initialization
+- **Solution**: Call `menu.quit()` before creating `BattleGame()` instance
 
 ---
 
