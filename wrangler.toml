@@ -1,0 +1,14 @@
+name = "tetris-online"
+main = "docs/cloudflare-worker-online.js"
+compatibility_date = "2024-01-01"
+
+# Durable Objects binding
+[durable_objects]
+bindings = [
+  { name = "GAME_LOBBY", class_name = "GameLobby" }
+]
+
+# Durable Objects migration (required for first deploy)
+[[migrations]]
+tag = "v1"
+new_classes = ["GameLobby"]

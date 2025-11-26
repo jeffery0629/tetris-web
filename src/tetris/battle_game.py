@@ -62,6 +62,9 @@ class BattlePlayer:
         # Name for display
         self.name = f"P{player_id}"
 
+        # Online mode: is this player controlled locally?
+        self.is_local = True  # Default True for local battle mode
+
     def get_fall_speed(self) -> float:
         """Get current fall speed, considering debuffs."""
         base_speed = INITIAL_FALL_SPEED * (SPEED_INCREASE_PER_LEVEL ** (self.level - 1))
