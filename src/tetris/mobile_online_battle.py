@@ -571,19 +571,16 @@ class MobileOnlineBattleGame:
 
     def _draw_game(self):
         """Draw main game screen."""
-        # 1. Draw opponent status bar at top (55px)
-        self._draw_opponent_status_bar()
-
-        # 2. Draw game board (offset down by 55px for status bar)
-        board_offset_y = 55 + 50  # status bar + title area
-        offset_x = 50
-
         # Set renderer screen to our screen and draw background
         self.renderer.screen = self.screen
         self.renderer.screen.blit(self.renderer.bg_surface, (0, 0))
 
-        # Redraw status bar after background
+        # 1. Draw opponent status bar at top (55px)
         self._draw_opponent_status_bar()
+
+        # 2. Draw game board (offset down by 55px for status bar)
+        board_offset_y = 55  # Just status bar height
+        offset_x = 50
 
         # Draw board and blocks
         self.renderer.draw_board(self.board, offset_x, board_offset_y)
@@ -595,32 +592,53 @@ class MobileOnlineBattleGame:
         # Calculate board end position for UI placement
         board_end_x = offset_x + self.board.width * self.renderer.cell_size + 10
 
-        # Draw UI elements
-        self.renderer.draw_ui(
-            score=self.score,
-            level=self.level,
-            lines=self.lines,
-            high_score=0,
-            board_end_x=board_end_x
-        )
+        # 3. Draw our own compact UI (not using renderer.draw_ui which has title/mode)
+        self._draw_mobile_ui(board_end_x, board_offset_y)
 
         # Draw next and hold blocks
-        self.renderer.draw_next_block(self.next_block, board_end_x=board_end_x)
-        self.renderer.draw_hold_block(self.held_block, board_end_x=board_end_x)
+        self.renderer.draw_next_block(self.next_block, x=board_end_x + 10, y=board_offset_y)
+        self.renderer.draw_hold_block(self.held_block, x=board_end_x + 10, y=board_offset_y + 130)
 
         # Draw powerup inventory if any
         if self.powerups:
             self._draw_powerups(board_end_x)
 
-        # 3. Draw debuff effects on board
+        # 4. Draw debuff effects on board
         self._draw_debuff_effects(board_offset_y)
 
-        # 4. Draw touch controls
+        # 5. Draw touch controls
         self.touch_controls.draw(self.screen, self.font_small)
 
-        # 5. Draw game over overlay
+        # 6. Draw game over overlay
         if self.state == GameState.GAME_OVER:
             self._draw_game_over()
+
+    def _draw_mobile_ui(self, board_end_x: int, board_offset_y: int):
+        """Draw compact mobile UI without title."""
+        ui_x = board_end_x + 15
+        panel_width = WINDOW_WIDTH - ui_x - 10
+
+        # Stats Panel - positioned below NEXT and HOLD blocks
+        stats_y = board_offset_y + 260
+        panel_height = 120
+
+        # Panel background
+        pygame.draw.rect(self.screen, (50, 50, 60), (ui_x, stats_y, panel_width, panel_height), border_radius=8)
+        pygame.draw.rect(self.screen, (100, 100, 120), (ui_x, stats_y, panel_width, panel_height), 2, border_radius=8)
+
+        # Score (large)
+        score_text = f"Score: {self.score}"
+        score_surface = self.font_medium.render(score_text, True, COLOR_WHITE)
+        self.screen.blit(score_surface, (ui_x + 10, stats_y + 15))
+
+        # Level and Lines (smaller, side by side)
+        level_text = f"Lv.{self.level}"
+        level_surface = self.font_small.render(level_text, True, (200, 200, 200))
+        self.screen.blit(level_surface, (ui_x + 10, stats_y + 55))
+
+        lines_text = f"Lines: {self.lines}"
+        lines_surface = self.font_small.render(lines_text, True, (200, 200, 200))
+        self.screen.blit(lines_surface, (ui_x + 10, stats_y + 85))
 
     def _draw_opponent_status_bar(self):
         """Draw opponent status bar at top of screen."""
@@ -665,11 +683,11 @@ class MobileOnlineBattleGame:
 
     def _draw_powerups(self, board_end_x: int):
         """Draw powerup inventory."""
-        # Position below hold block
+        # Position below stats panel
         panel_x = board_end_x + 15
-        panel_y = 350
-        panel_width = 120
-        panel_height = 80
+        panel_y = 440  # Below stats panel (55 + 260 + 120 + 5)
+        panel_width = WINDOW_WIDTH - panel_x - 10
+        panel_height = 70
 
         # Panel background
         pygame.draw.rect(self.screen, (50, 50, 60), (panel_x, panel_y, panel_width, panel_height), border_radius=8)
@@ -687,14 +705,14 @@ class MobileOnlineBattleGame:
 
         # Hint
         hint = self.font_small.render("[PWR]", True, (150, 150, 150))
-        self.screen.blit(hint, (panel_x + 25, panel_y + 58))
+        self.screen.blit(hint, (panel_x + 25, panel_y + 48))
 
     def _draw_debuff_effects(self, offset_y: int):
         """Draw visual debuff effects on the game board."""
-        # Calculate board position
-        board_width = self.board.width * CELL_SIZE
-        board_height = self.board.height * CELL_SIZE
-        offset_x = (WINDOW_WIDTH - board_width) // 2 - 80
+        # Use consistent board position
+        offset_x = 50
+        board_width = self.board.width * self.renderer.cell_size
+        board_height = self.board.height * self.renderer.cell_size
 
         # Ink effect - dark overlay on bottom 2/3
         if BattlePowerUpType.INK in self.active_debuffs:
@@ -702,12 +720,13 @@ class MobileOnlineBattleGame:
             ink_surface = pygame.Surface((board_width, ink_height))
             ink_surface.fill((5, 5, 10))
             ink_surface.set_alpha(240)
-            self.screen.blit(ink_surface, (offset_x, offset_y + 50 + board_height - ink_height))
+            self.screen.blit(ink_surface, (offset_x, offset_y + board_height - ink_height))
 
-        # Draw active debuff icons
+        # Draw active debuff icons below powerup panel
         if self.active_debuffs:
-            debuff_y = offset_y + 60
-            debuff_x = offset_x + board_width + 15
+            board_end_x = offset_x + board_width + 10
+            debuff_y = 520
+            debuff_x = board_end_x + 15
             label = self.font_small.render("DEBUFF", True, COLOR_RED)
             self.screen.blit(label, (debuff_x, debuff_y))
             for i, debuff in enumerate(self.active_debuffs.keys()):

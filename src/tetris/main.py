@@ -34,22 +34,20 @@ async def main():
             # Battle mode's run() already calls pygame.quit() at the end
             continue
 
-        # Handle Online Battle mode - auto-detect platform
+        # Handle Online Battle mode (Desktop - dual board layout)
         if selected_mode == GameMode.ONLINE_BATTLE:
             menu.quit()
-            import sys
-            IS_WEB = sys.platform == "emscripten"
+            from .online_battle import OnlineBattleGame
+            online_game = OnlineBattleGame()
+            player_name = "Player"
+            await online_game.run_async(player_name)
+            continue
 
-            if IS_WEB:
-                # Mobile/Web: Single board with status bar
-                from .mobile_online_battle import MobileOnlineBattleGame
-                online_game = MobileOnlineBattleGame()
-            else:
-                # Desktop: Dual board layout
-                from .online_battle import OnlineBattleGame
-                online_game = OnlineBattleGame()
-
-            # TODO: Add player name input in future
+        # Handle Mobile Online mode (Mobile/Web - single board with status bar)
+        if selected_mode == GameMode.MOBILE_ONLINE:
+            menu.quit()
+            from .mobile_online_battle import MobileOnlineBattleGame
+            online_game = MobileOnlineBattleGame()
             player_name = "Player"
             await online_game.run_async(player_name)
             continue

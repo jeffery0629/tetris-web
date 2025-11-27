@@ -118,6 +118,7 @@ class GameMode(Enum):
     CRAZY = "crazy"
     BATTLE = "battle"
     ONLINE_BATTLE = "online_battle"
+    MOBILE_ONLINE = "mobile_online"
 
 
 class BattlePowerUpType(Enum):

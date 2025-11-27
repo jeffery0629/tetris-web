@@ -121,11 +121,11 @@ class ModeSelectionMenu:
         except (pygame.error, FileNotFoundError):
             self.mode_icons['crazy'] = None
 
-        # Create buttons - 5 modes (adjusted size for fitting)
+        # Create buttons - 6 modes (smaller buttons to fit all)
         button_width = 420
-        button_height = 90
-        button_spacing = 12
-        start_y = 160
+        button_height = 75
+        button_spacing = 8
+        start_y = 140
 
         self.buttons = [
             ModeButton(
@@ -174,10 +174,21 @@ class ModeSelectionMenu:
             ),
             ModeButton(
                 mode=GameMode.ONLINE_BATTLE,
-                display_name="ONLINE BATTLE [2P]",
-                description="Fight players worldwide!",
+                display_name="ONLINE [PC]",
+                description="Desktop online battle - dual boards",
                 x=WINDOW_WIDTH // 2 - button_width // 2,
                 y=start_y + (button_height + button_spacing) * 4,
+                width=button_width,
+                height=button_height,
+                unlocked=True,
+                icon=None
+            ),
+            ModeButton(
+                mode=GameMode.MOBILE_ONLINE,
+                display_name="ONLINE [MOBILE]",
+                description="Mobile online battle - single board",
+                x=WINDOW_WIDTH // 2 - button_width // 2,
+                y=start_y + (button_height + button_spacing) * 5,
                 width=button_width,
                 height=button_height,
                 unlocked=True,
@@ -210,6 +221,8 @@ class ModeSelectionMenu:
                         return GameMode.BATTLE
                     elif event.key == pygame.K_5:
                         return GameMode.ONLINE_BATTLE
+                    elif event.key == pygame.K_6:
+                        return GameMode.MOBILE_ONLINE
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
                         if button.is_clicked(mouse_pos):
@@ -271,6 +284,8 @@ class ModeSelectionMenu:
                         return GameMode.BATTLE
                     elif event.key == pygame.K_5:
                         return GameMode.ONLINE_BATTLE
+                    elif event.key == pygame.K_6:
+                        return GameMode.MOBILE_ONLINE
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
                         if button.is_clicked(mouse_pos):
