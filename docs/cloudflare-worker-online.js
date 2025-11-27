@@ -14,6 +14,20 @@
 const GAME_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_STATE_SIZE = 10000; // bytes
 const STATE_RATE_LIMIT_MS = 50; // 20 FPS max
+const BLOCK_SEQUENCE_SIZE = 100; // Pre-generate blocks for each player
+
+// Standard Tetromino types (matching Python constants)
+const TETROMINO_TYPES = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+
+// Generate a sequence of random blocks
+function generateBlockSequence(count) {
+  const sequence = [];
+  for (let i = 0; i < count; i++) {
+    const type = TETROMINO_TYPES[Math.floor(Math.random() * TETROMINO_TYPES.length)];
+    sequence.push(type);
+  }
+  return sequence;
+}
 
 export default {
   async fetch(request, env) {
@@ -160,6 +174,23 @@ export class GameLobby {
               }
             }
             break;
+
+          case 'DEBUFF':
+            // Relay debuff effect to opponent
+            if (currentGameId) {
+              const game = this.activeGames.get(currentGameId);
+              if (game) {
+                const opponent = game.player1.id === playerId ? game.player2 : game.player1;
+                if (opponent.ws.readyState === WebSocket.OPEN) {
+                  opponent.ws.send(JSON.stringify({
+                    type: 'DEBUFF',
+                    debuff: data.debuff,
+                    duration: data.duration
+                  }));
+                }
+              }
+            }
+            break;
         }
       } catch (e) {
         console.error('Message handling error:', e);
@@ -210,12 +241,20 @@ export class GameLobby {
       const gameId = crypto.randomUUID();
       const startTime = Date.now();
 
+      // Generate block sequences for both players (same sequence for both)
+      const player1Blocks = generateBlockSequence(BLOCK_SEQUENCE_SIZE);
+      const player2Blocks = generateBlockSequence(BLOCK_SEQUENCE_SIZE);
+
       // Create game
       const game = {
         player1: opponent,
         player2: { ws, id: playerId, name: playerName },
         startTime,
-        timerId: null
+        timerId: null,
+        blockSequences: {
+          player1: player1Blocks,
+          player2: player2Blocks
+        }
       };
       this.activeGames.set(gameId, game);
 
@@ -223,21 +262,27 @@ export class GameLobby {
       opponent.ws._setGameId(gameId);
       ws._setGameId(gameId);
 
-      // Notify both players
+      // Notify both players with block sequences
+      // Player 1 gets their own blocks and opponent's blocks
       opponent.ws.send(JSON.stringify({
         type: 'MATCH_START',
         game_id: gameId,
         role: 1,
         opponent_name: playerName,
-        server_time: startTime
+        server_time: startTime,
+        my_blocks: player1Blocks,
+        opponent_blocks: player2Blocks
       }));
 
+      // Player 2 gets their own blocks and opponent's blocks
       ws.send(JSON.stringify({
         type: 'MATCH_START',
         game_id: gameId,
         role: 2,
         opponent_name: opponent.name,
-        server_time: startTime
+        server_time: startTime,
+        my_blocks: player2Blocks,
+        opponent_blocks: player1Blocks
       }));
 
       // Start game timer

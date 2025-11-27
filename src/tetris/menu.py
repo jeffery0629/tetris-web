@@ -121,11 +121,11 @@ class ModeSelectionMenu:
         except (pygame.error, FileNotFoundError):
             self.mode_icons['crazy'] = None
 
-        # Create buttons - 4 modes (adjusted size for fitting)
+        # Create buttons - 5 modes (adjusted size for fitting)
         button_width = 420
-        button_height = 110
-        button_spacing = 15
-        start_y = 180
+        button_height = 90
+        button_spacing = 12
+        start_y = 160
 
         self.buttons = [
             ModeButton(
@@ -164,13 +164,24 @@ class ModeSelectionMenu:
             ModeButton(
                 mode=GameMode.BATTLE,
                 display_name="BATTLE [2P LOCAL]",
-                description="10min fight - send garbage!",
+                description="Local 2-player battle",
                 x=WINDOW_WIDTH // 2 - button_width // 2,
                 y=start_y + (button_height + button_spacing) * 3,
                 width=button_width,
                 height=button_height,
                 unlocked=True,
-                icon=None  # No icon for battle mode yet
+                icon=None
+            ),
+            ModeButton(
+                mode=GameMode.ONLINE_BATTLE,
+                display_name="ONLINE BATTLE [2P]",
+                description="Fight players worldwide!",
+                x=WINDOW_WIDTH // 2 - button_width // 2,
+                y=start_y + (button_height + button_spacing) * 4,
+                width=button_width,
+                height=button_height,
+                unlocked=True,
+                icon=None
             ),
         ]
 
@@ -197,6 +208,8 @@ class ModeSelectionMenu:
                             return GameMode.CRAZY
                     elif event.key == pygame.K_4:
                         return GameMode.BATTLE
+                    elif event.key == pygame.K_5:
+                        return GameMode.ONLINE_BATTLE
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
                         if button.is_clicked(mouse_pos):
@@ -212,12 +225,12 @@ class ModeSelectionMenu:
             # Title
             from .constants import COLOR_TEXT
             title = self.font_title.render("CLAIRE'S TETRIS", True, COLOR_TEXT)
-            title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 80))
+            title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 60))
             self.screen.blit(title, title_rect)
 
             # Subtitle with cat icon
             subtitle = self.font_medium.render("Select Game Mode", True, COLOR_TEXT)
-            subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 140))
+            subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 120))
             self.screen.blit(subtitle, subtitle_rect)
 
             # Cat icon next to subtitle
@@ -256,6 +269,8 @@ class ModeSelectionMenu:
                             return GameMode.CRAZY
                     elif event.key == pygame.K_4:
                         return GameMode.BATTLE
+                    elif event.key == pygame.K_5:
+                        return GameMode.ONLINE_BATTLE
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
                         if button.is_clicked(mouse_pos):
@@ -271,12 +286,12 @@ class ModeSelectionMenu:
             # Title
             from .constants import COLOR_TEXT
             title = self.font_title.render("CLAIRE'S TETRIS", True, COLOR_TEXT)
-            title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 80))
+            title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 60))
             self.screen.blit(title, title_rect)
 
             # Subtitle with cat icon
             subtitle = self.font_medium.render("Select Game Mode", True, COLOR_TEXT)
-            subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 140))
+            subtitle_rect = subtitle.get_rect(center=(WINDOW_WIDTH // 2, 120))
             self.screen.blit(subtitle, subtitle_rect)
 
             # Cat icon next to subtitle

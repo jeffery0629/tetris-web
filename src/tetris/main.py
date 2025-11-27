@@ -34,6 +34,16 @@ async def main():
             # Battle mode's run() already calls pygame.quit() at the end
             continue
 
+        # Handle Online Battle mode
+        if selected_mode == GameMode.ONLINE_BATTLE:
+            menu.quit()
+            from .online_battle import OnlineBattleGame
+            online_game = OnlineBattleGame()
+            # TODO: Add player name input in future
+            player_name = "Player"
+            await online_game.run_async(player_name)
+            continue
+
         # For non-battle modes, quit menu before starting game
         menu.quit()
 

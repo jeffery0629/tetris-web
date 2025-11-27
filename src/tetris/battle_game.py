@@ -570,12 +570,12 @@ class BattleGame:
         timer_text = f"{minutes:02d}:{seconds:02d}"
 
         text_surface = self.font_large.render(timer_text, True, COLOR_TEXT)
-        text_rect = text_surface.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, 40))
+        text_rect = text_surface.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, 30))
         self.screen.blit(text_surface, text_rect)
 
-        # Battle mode title
-        title = self.font_medium.render("BATTLE MODE", True, COLOR_RED)
-        title_rect = title.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, 75))
+        # Battle mode title (smaller, below timer)
+        title = self.font_small.render("BATTLE MODE", True, (255, 150, 150))
+        title_rect = title.get_rect(center=(self.BATTLE_WINDOW_WIDTH // 2, 58))
         self.screen.blit(title, title_rect)
 
     def _draw_player(self, player: BattlePlayer, board_x: int, board_y: int,

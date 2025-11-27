@@ -222,13 +222,16 @@ class NetworkManager:
                 simple_grid.append(simple_row)
             payload["grid"] = simple_grid
 
-        # Serialize current piece
+        # Serialize current piece with shape for rendering
         if piece:
+            # Get current rotation's shape
+            current_shape = piece.shape[piece.rotation] if piece.shape else []
             payload["piece"] = {
                 "x": piece.x,
                 "y": piece.y,
                 "rotation": piece.rotation,
-                "color": list(piece.color) if piece.color else [128, 128, 128]
+                "color": list(piece.color) if piece.color else [128, 128, 128],
+                "shape": current_shape  # Include shape for opponent rendering
             }
 
         return await self.send(payload)
@@ -245,6 +248,14 @@ class NetworkManager:
     async def send_game_over(self):
         """Notify server that this player topped out."""
         return await self.send({"type": "GAME_OVER"})
+
+    async def send_debuff(self, debuff_type: str, duration: float):
+        """Send a debuff effect to opponent."""
+        return await self.send({
+            "type": "DEBUFF",
+            "debuff": debuff_type,
+            "duration": duration
+        })
 
     def close(self):
         """Close the WebSocket connection."""
