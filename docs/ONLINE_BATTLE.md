@@ -216,19 +216,42 @@ else:
 3. ~~**Time desync** - 需要伺服器同步時間~~ ✅ Fixed (server sends TIME_SYNC)
 4. **No opponent piece** - 對手的 current_piece 渲染待優化
 
-## Next Steps
+## Next Steps (從這裡繼續)
 
-1. **Deploy Cloudflare Worker**
-   - 使用 `wrangler` CLI 部署 `cloudflare-worker-online.js`
-   - 設定 Durable Objects binding
-   - 取得 Worker URL
+### ⏭️ 下一步：部署 Cloudflare Worker
 
-2. **Update network_manager.py**
-   - 修改 `DEFAULT_URL` 為正式 Worker URL
+**前置需求**：
+- Node.js 已安裝
+- Cloudflare 帳號（你已有，用於排行榜）
 
-3. **Test End-to-End**
-   - 本地測試：兩個瀏覽器視窗
-   - 跨裝置測試：手機 + 電腦
+**執行步驟**：
+
+```bash
+# Step 1: 安裝 Wrangler CLI（如果還沒裝）
+npm install -g wrangler
+
+# Step 2: 登入 Cloudflare
+wrangler login
+
+# Step 3: 部署 Worker（在專案根目錄執行）
+cd d:\Jeffery\claire
+wrangler deploy
+```
+
+**部署成功後**：
+- 會顯示 Worker URL，例如：`https://tetris-online.xxx.workers.dev`
+- 確認 URL 與 `network_manager.py` 第 27 行的 `DEFAULT_URL` 一致
+- 如果不同，需要更新程式碼
+
+### 後續步驟
+
+2. **本地測試**
+   - 開兩個瀏覽器視窗訪問 GitHub Pages
+   - 確認配對和遊戲同步正常
+
+3. **整合到主選單**
+   - 在 `main.py` 加入 Online Battle 選項
+   - 加入玩家名稱輸入功能
 
 ## References
 
