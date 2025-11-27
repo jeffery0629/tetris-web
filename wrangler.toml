@@ -9,6 +9,7 @@ bindings = [
 ]
 
 # Durable Objects migration (required for first deploy)
+# Using new_sqlite_classes for free plan compatibility
 [[migrations]]
 tag = "v1"
-new_classes = ["GameLobby"]
+new_sqlite_classes = ["GameLobby"]
