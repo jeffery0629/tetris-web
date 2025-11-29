@@ -72,23 +72,20 @@ class TouchControlManager:
         )
 
         # --- BOTTOM ROW BUTTONS ---
-        # Layout: [ DROP (Wide) ] [ PWR (Center) ] [ ROT (Wide) ]
-        
-        # 1. Calculate widths
-        # Total usable width = Window - (Margin * 2) - (Gap * 2)
-        # Let PWR be 160px wide
-        # Side buttons take remaining space equally
-        
-        pwr_width = 160
-        side_button_width = (window_width - (self.button_margin * 2) - (self.button_gap * 2) - pwr_width) // 2
-        
+        # Layout: [ DROP ] [ SOFT ] [ PWR ] [ ROT ]
+
+        # 1. Calculate widths - 4 equal buttons
+        total_gaps = self.button_gap * 3  # 3 gaps between 4 buttons
+        total_margins = self.button_margin * 2
+        button_width = (window_width - total_margins - total_gaps) // 4
+
         # 2. Define Buttons
-        
-        # Hard Drop (Bottom Left)
+
+        # Hard Drop (instant drop)
         self.drop_button = TouchButton(
             x=self.button_margin,
             y=bottom_y,
-            width=side_button_width,
+            width=button_width,
             height=self.button_height,
             label="Drop",
             icon="DROP",
@@ -96,12 +93,25 @@ class TouchControlManager:
             color=(220, 100, 100),   # Red
             hover_color=(240, 120, 120)
         )
-        
-        # Power-up (Bottom Center)
-        self.powerup_button = TouchButton(
-            x=self.button_margin + side_button_width + self.button_gap,
+
+        # Soft Drop (slow fall)
+        self.soft_drop_button = TouchButton(
+            x=self.button_margin + button_width + self.button_gap,
             y=bottom_y,
-            width=pwr_width,
+            width=button_width,
+            height=self.button_height,
+            label="Soft",
+            icon="SLOW",
+            action="soft_drop",
+            color=(255, 180, 100),   # Orange
+            hover_color=(255, 200, 120)
+        )
+
+        # Power-up
+        self.powerup_button = TouchButton(
+            x=self.button_margin + (button_width + self.button_gap) * 2,
+            y=bottom_y,
+            width=button_width,
             height=self.button_height,
             label="Power-up",
             icon="PWR",
@@ -110,11 +120,11 @@ class TouchControlManager:
             hover_color=(220, 120, 220)
         )
 
-        # Rotate (Bottom Right)
+        # Rotate
         self.rotate_button = TouchButton(
-            x=window_width - side_button_width - self.button_margin,
+            x=self.button_margin + (button_width + self.button_gap) * 3,
             y=bottom_y,
-            width=side_button_width,
+            width=button_width,
             height=self.button_height,
             label="Rotate",
             icon="ROT",
@@ -147,6 +157,7 @@ class TouchControlManager:
         self.buttons = [
             self.pause_button,
             self.drop_button,
+            self.soft_drop_button,
             self.rotate_button,
             self.powerup_button,
             self.hold_button

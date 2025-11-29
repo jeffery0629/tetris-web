@@ -312,6 +312,9 @@ class MobileOnlineBattleGame:
 
         if action == 'hard_drop':
             self._hard_drop()
+        elif action == 'soft_drop':
+            if self._move(0, 1):
+                self.score += SCORE_SOFT_DROP
         elif action == 'rotate':
             self._rotate(clockwise=True)
         elif action == 'powerup':

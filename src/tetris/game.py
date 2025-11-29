@@ -566,6 +566,9 @@ class GameEnhanced:
                 elif action == "hard_drop":
                     rows = self.hard_drop()
                     self.score += rows * SCORE_HARD_DROP
+                elif action == "soft_drop":
+                    if self.move_block(0, 1):
+                        self.score += SCORE_SOFT_DROP
                 elif action == "powerup":
                     self.use_powerup()
                 elif action == "hold":
