@@ -177,6 +177,9 @@ class GameEnhanced:
         # Ghost mode allows moving through blocks but NOT out of bounds
         if self.powerup_manager.is_effect_active(PowerUpType.GHOST_MODE):
             if self.board.is_within_bounds(self.current_block):
+                # After horizontal move, check if block can fall further
+                if dx != 0:
+                    self._check_ground_after_move()
                 return True
             else:
                 # Still out of bounds, revert
@@ -184,11 +187,39 @@ class GameEnhanced:
                 return False
 
         if self.board.is_valid_position(self.current_block):
+            # After horizontal move, check if block can fall further
+            if dx != 0:
+                self._check_ground_after_move()
             return True
         else:
             # Revert move
             self.current_block.move(-dx, -dy)
             return False
+
+    def _check_ground_after_move(self) -> None:
+        """Check if block is still on ground after horizontal move.
+
+        If block can fall further, reset is_on_ground and lock_timer.
+        This prevents the floating block bug.
+        """
+        if not self.current_block or not self.is_on_ground:
+            return
+
+        # Test if block can move down
+        self.current_block.move(0, 1)
+
+        if self.powerup_manager.is_effect_active(PowerUpType.GHOST_MODE):
+            can_fall = self.board.is_within_bounds(self.current_block)
+        else:
+            can_fall = self.board.is_valid_position(self.current_block)
+
+        # Revert test move
+        self.current_block.move(0, -1)
+
+        # If block can fall, it's no longer on ground
+        if can_fall:
+            self.is_on_ground = False
+            self.lock_timer = 0
 
     def rotate_block(self, clockwise: bool = True) -> bool:
         """Rotate current block with wall kick support."""

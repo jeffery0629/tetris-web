@@ -418,8 +418,30 @@ class MobileOnlineBattleGame:
         if dy > 0:
             self.is_on_ground = False
             self.lock_timer = 0
+        elif dx != 0:
+            # After horizontal move, check if block can fall further
+            self._check_ground_after_move()
 
         return True
+
+    def _check_ground_after_move(self) -> None:
+        """Check if block is still on ground after horizontal move.
+
+        If block can fall further, reset is_on_ground and lock_timer.
+        This prevents the floating block bug.
+        """
+        if not self.current_block or not self.is_on_ground:
+            return
+
+        # Test if block can move down
+        self.current_block.y += 1
+        can_fall = self.board.is_valid_position(self.current_block)
+        self.current_block.y -= 1
+
+        # If block can fall, it's no longer on ground
+        if can_fall:
+            self.is_on_ground = False
+            self.lock_timer = 0
 
     def _rotate(self, clockwise: bool = True):
         """Rotate current block with wall kicks."""
