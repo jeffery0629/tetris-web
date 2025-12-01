@@ -9,6 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
+# Cloudflare Wrangler
+.wrangler/
+
 # Environment variables (contains secrets!)
 .env
 src/tetris/web_config.py
