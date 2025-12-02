@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 from .constants import (
     GameState, CELL_SIZE, COLOR_WHITE, COLOR_TEXT, COLOR_BLACK,
     SCORE_SOFT_DROP, SCORE_HARD_DROP, BATTLE_DURATION, LOCK_DELAY,
-    BattlePowerUpType, BATTLE_POWERUP_SPAWN_RATE, BATTLE_POWERUP_DURATION
+    BattlePowerUpType, BATTLE_POWERUP_SPAWN_RATE, BATTLE_POWERUP_DURATION,
+    GARBAGE_LINES
 )
 from .board import Board
 from .tetromino import create_tetromino, get_random_tetromino
@@ -512,8 +513,9 @@ class OnlineBattleGame(BattleGame):
         lines_cleared = player.lines - lines_before
 
         # Send garbage via network instead of directly adding to opponent
-        if lines_cleared >= 2:
-            garbage_to_send = lines_cleared - 1
+        # Use GARBAGE_LINES table to match parent's calculation
+        garbage_to_send = GARBAGE_LINES.get(lines_cleared, 0)
+        if garbage_to_send > 0:
             # Reset opponent's pending_garbage (parent added it locally)
             opponent.pending_garbage = max(0, opponent.pending_garbage - garbage_to_send)
             # Send via network
